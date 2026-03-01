@@ -44,13 +44,14 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
+    "src",
     "dist"
   ],
   "scripts": {
     "build": "pnpm copyfiles && pnpm build:types && pnpm build:swc",
     "build:swc": "swc ./src -d ./dist --config-file .swcrc --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
-    "clean": "rimraf {dist,*.tsbuildinfo}",
+    "clean": "rimraf -g {dist,*.tsbuildinfo}",
     "copyfiles": "copyfiles -u 1 \"src/**/*.{html,css,scss,ttf,woff,woff2,eot,svg,jpg,png,json}\" dist/",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -85,5 +86,32 @@
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
     "pnpm": "^9 || ^10"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./client": {
+        "import": "./dist/exports/client.js",
+        "types": "./dist/exports/client.d.ts",
+        "default": "./dist/exports/client.js"
+      },
+      "./translations": {
+        "import": "./dist/exports/translations.js",
+        "types": "./dist/exports/translations.d.ts",
+        "default": "./dist/exports/translations.js"
+      },
+      "./types": {
+        "import": "./dist/exports/types.js",
+        "types": "./dist/exports/types.d.ts",
+        "default": "./dist/exports/types.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "registry": "https://registry.npmjs.org/",
+    "types": "./dist/index.d.ts"
   }
 }
