@@ -12,9 +12,9 @@ import {
   useLocale,
   useModal,
   useTranslation,
+  toast,
 } from '@payloadcms/ui'
 import React, { useCallback, useState } from 'react'
-import { toast } from 'sonner'
 
 import './index.scss'
 

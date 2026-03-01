@@ -59,8 +59,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "deepl-node": "^1.14.0",
-    "sonner": "^2.0.7"
+    "deepl-node": "^1.14.0"
   },
   "peerDependencies": {
     "@payloadcms/translations": "^3.0.0",

@@ -1,8 +1,7 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
-import { Button, Modal, ReactSelect, useConfig, useDocumentInfo, useLocale, useModal, useTranslation } from '@payloadcms/ui';
+import { Button, Modal, ReactSelect, useConfig, useDocumentInfo, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui';
 import React, { useCallback, useState } from 'react';
-import { toast } from 'sonner';
 import './index.scss';
 const MODAL_SLUG = 'translate-document-modal';
 export const TranslateButton = ()=>{
