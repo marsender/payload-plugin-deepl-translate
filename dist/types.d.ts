@@ -11,7 +11,7 @@ export type PluginConfig = {
     disabled?: boolean;
 } & ({
     /** DeepL API key. Mutually exclusive with `adapter`. */
-    deeplApiKey: string;
+    deeplApiKey: string | undefined;
     adapter?: never;
 } | {
     /** Custom translation adapter. Mutually exclusive with `deeplApiKey`. */
