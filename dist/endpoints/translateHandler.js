@@ -39,8 +39,10 @@ export const translateHandler = async (req)=>{
                 status: 400
             });
         }
-        // Retrieve the adapter stored during plugin initialization
-        const adapter = payload.config.custom?.translateAdapter;
+        // Retrieve the adapter and locale mapping stored during plugin initialization
+        const custom = payload.config.custom;
+        const adapter = custom?.translateAdapter;
+        const localeMapping = custom?.translateLocaleMapping ?? {};
         if (!adapter) {
             return Response.json({
                 error: 'Translation adapter not configured',
@@ -86,10 +88,13 @@ export const translateHandler = async (req)=>{
         let successfulLocales = 0;
         for (const targetLocale of targetLocales){
             try {
+                // Apply optional locale mapping (e.g. 'en' → 'en-US' for DeepL)
+                const mappedSource = localeMapping[sourceLocale] ?? sourceLocale;
+                const mappedTarget = localeMapping[targetLocale] ?? targetLocale;
                 // Translate each field individually (one API call per field)
                 const translations = [];
                 for (const field of translatableFields){
-                    const translated = await adapter.translate(field.value, sourceLocale, targetLocale);
+                    const translated = await adapter.translate(field.value, mappedSource, mappedTarget);
                     translations.push(translated);
                 }
                 const updatedData = applyTranslations(document, translatableFields, translations);

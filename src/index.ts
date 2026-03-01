@@ -57,11 +57,13 @@ export const deeplTranslatePlugin =
       return config
     }
 
-    // Store adapter for use in the endpoint handler
+    // Store adapter and locale mapping for use in the endpoint handler
     if (!config.custom) {
       config.custom = {}
     }
     ;(config.custom as Record<string, unknown>).translateAdapter = adapter
+    ;(config.custom as Record<string, unknown>).translateLocaleMapping =
+      pluginConfig.localeMapping ?? {}
 
     // Inject TranslateButton into each configured collection
     if (!config.collections) {

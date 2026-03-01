@@ -86,16 +86,36 @@ deeplTranslatePlugin({
 })
 ```
 
+## Locale Mapping
+
+Some translation providers require more specific locale codes than what Payload uses. For example, DeepL deprecated `en` as a target language and requires `en-GB` or `en-US` instead.
+
+Use the `localeMapping` option to map Payload locale codes to provider-specific ones:
+
+```typescript
+deeplTranslatePlugin({
+  collections: ['pages', 'posts'],
+  deeplApiKey: process.env.DEEPL_API_KEY,
+  localeMapping: {
+    en: 'en-US',   // or 'en-GB'
+    pt: 'pt-BR',   // or 'pt-PT'
+  },
+})
+```
+
+The mapping applies to both source and target locales. Unmapped locales are passed through unchanged.
+
 ## API Reference
 
 ### `deeplTranslatePlugin(config)`
 
-| Option        | Type                 | Required    | Description                                            |
-| ------------- | -------------------- | ----------- | ------------------------------------------------------ |
-| `collections` | `CollectionSlug[]`   | Yes         | Collection slugs that get the Translate button         |
-| `deeplApiKey` | `string`             | Conditional | DeepL API key (mutually exclusive with `adapter`)      |
-| `adapter`     | `TranslationAdapter` | Conditional | Custom adapter (mutually exclusive with `deeplApiKey`) |
-| `disabled`    | `boolean`            | No          | When true, plugin is a no-op                           |
+| Option          | Type                    | Required    | Description                                            |
+| --------------- | ----------------------- | ----------- | ------------------------------------------------------ |
+| `collections`   | `CollectionSlug[]`      | Yes         | Collection slugs that get the Translate button         |
+| `deeplApiKey`   | `string`                | Conditional | DeepL API key (mutually exclusive with `adapter`)      |
+| `adapter`       | `TranslationAdapter`    | Conditional | Custom adapter (mutually exclusive with `deeplApiKey`) |
+| `disabled`      | `boolean`               | No          | When true, plugin is a no-op                           |
+| `localeMapping` | `Record<string,string>` | No          | Map Payload locale codes to provider-specific codes    |
 
 ### `TranslationAdapter` interface
 
@@ -128,6 +148,7 @@ Requires authenticated Payload session.
 | "Translation adapter not configured" | Add `deeplApiKey` or `adapter` to plugin config                                   |
 | HTTP 429 from DeepL                  | Rate limit or monthly quota exceeded — wait and retry, or upgrade DeepL plan      |
 | Fields not translated                | Ensure fields have `localized: true` in the collection config                     |
+| `targetLang='en' is deprecated`      | DeepL no longer accepts `en` as a target — use `localeMapping: { en: 'en-US' }`   |
 
 ## License
 

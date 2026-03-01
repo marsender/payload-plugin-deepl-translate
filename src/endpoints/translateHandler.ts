@@ -45,9 +45,10 @@ export const translateHandler: PayloadHandler = async (req) => {
       )
     }
 
-    // Retrieve the adapter stored during plugin initialization
-    const adapter = (payload.config.custom as Record<string, unknown>)
-      ?.translateAdapter as TranslationAdapter | undefined
+    // Retrieve the adapter and locale mapping stored during plugin initialization
+    const custom = payload.config.custom as Record<string, unknown> | undefined
+    const adapter = custom?.translateAdapter as TranslationAdapter | undefined
+    const localeMapping = (custom?.translateLocaleMapping ?? {}) as Record<string, string>
 
     if (!adapter) {
       return Response.json(
@@ -98,10 +99,14 @@ export const translateHandler: PayloadHandler = async (req) => {
 
     for (const targetLocale of targetLocales) {
       try {
+        // Apply optional locale mapping (e.g. 'en' → 'en-US' for DeepL)
+        const mappedSource = localeMapping[sourceLocale] ?? sourceLocale
+        const mappedTarget = localeMapping[targetLocale] ?? targetLocale
+
         // Translate each field individually (one API call per field)
         const translations: string[] = []
         for (const field of translatableFields) {
-          const translated = await adapter.translate(field.value, sourceLocale, targetLocale)
+          const translated = await adapter.translate(field.value, mappedSource, mappedTarget)
           translations.push(translated)
         }
 

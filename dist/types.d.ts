@@ -9,6 +9,12 @@ export type PluginConfig = {
     collections: CollectionSlug[];
     /** When true, the plugin is a no-op and returns the Payload config unchanged. */
     disabled?: boolean;
+    /**
+     * Optional mapping of Payload locale codes to adapter-specific language codes.
+     * Use this when your adapter requires a more specific code than what Payload uses.
+     * @example { en: 'en-US', 'pt': 'pt-BR' }
+     */
+    localeMapping?: Record<string, string>;
 } & ({
     /** DeepL API key. Mutually exclusive with `adapter`. */
     deeplApiKey: string | undefined;

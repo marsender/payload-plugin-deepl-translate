@@ -34,12 +34,13 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
             console.error('[payload-plugin-deepl-translate] No translation adapter configured. ' + 'Provide either `deeplApiKey` or a custom `adapter` in the plugin config. ' + 'Plugin will be disabled.');
             return config;
         }
-        // Store adapter for use in the endpoint handler
+        // Store adapter and locale mapping for use in the endpoint handler
         if (!config.custom) {
             config.custom = {};
         }
         ;
         config.custom.translateAdapter = adapter;
+        config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
         // Inject TranslateButton into each configured collection
         if (!config.collections) {
             config.collections = [];
