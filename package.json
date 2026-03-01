@@ -56,7 +56,9 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "vitest run",
-    "type-check": "tsc --noEmit"
+    "test:unit": "vitest run tests/unit",
+    "test:int": "vitest run tests/int",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "deepl-node": "^1.14.0"
