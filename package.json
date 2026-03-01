@@ -58,8 +58,7 @@
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:int": "vitest run tests/int",
-    "type-check": "tsc --noEmit && tsc -p tsconfig.test.json",
-    "prepare": "husky || true"
+    "type-check": "tsc --noEmit && tsc -p tsconfig.test.json"
   },
   "dependencies": {
     "deepl-node": "^1.14.0"
