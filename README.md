@@ -18,7 +18,7 @@ Adds a **Translate** button to document edit views in the Payload admin panel. C
 ## Installation
 
 ```bash
-pnpm add @marsender/payload-plugin-deepl-translate
+pnpm add github:marsender/payload-plugin-deepl-translate
 ```
 
 ## Setup
