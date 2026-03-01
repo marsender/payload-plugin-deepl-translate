@@ -1,0 +1,40 @@
+.translate-modal {
+  .translate-modal__wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    min-width: 400px;
+    max-width: 560px;
+  }
+
+  .translate-modal__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0;
+      color: var(--theme-text);
+      opacity: 0.8;
+    }
+  }
+
+  .translate-modal__select {
+    min-width: 0;
+  }
+
+  .translate-modal__controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--theme-border-color);
+  }
+}
