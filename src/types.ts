@@ -14,7 +14,7 @@ export type PluginConfig = {
 } & (
   | {
       /** DeepL API key. Mutually exclusive with `adapter`. */
-      deeplApiKey: string
+      deeplApiKey: string | undefined
       adapter?: never
     }
   | {
