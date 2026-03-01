@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/adapters/index.ts"],"sourcesContent":["export { createDeepLAdapter, DeepLAdapter } from './deepl.js'\nexport type { TranslationAdapter } from './types.js'\n"],"names":["createDeepLAdapter","DeepLAdapter"],"mappings":"AAAA,SAASA,kBAAkB,EAAEC,YAAY,QAAQ,aAAY"}

@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/types.ts"],"sourcesContent":["export type {\n  PluginConfig,\n  TranslatableField,\n  TranslationRequest,\n  TranslationResponse,\n} from '../types.js'\n\nexport type { TranslationAdapter } from '../adapters/types.js'\n"],"names":[],"mappings":"AAOA,WAA8D"}
