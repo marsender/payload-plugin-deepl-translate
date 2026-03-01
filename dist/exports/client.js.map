@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/client.ts"],"sourcesContent":["export { TranslateButton } from '../components/TranslateButton/index.js'\n"],"names":["TranslateButton"],"mappings":"AAAA,SAASA,eAAe,QAAQ,yCAAwC"}

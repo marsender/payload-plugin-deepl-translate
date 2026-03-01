@@ -1,0 +1,1 @@
+{"version":3,"sources":["../../src/exports/translations.ts"],"sourcesContent":["export { en } from '../translations/languages/en.js'\nexport { fr } from '../translations/languages/fr.js'\n"],"names":["en","fr"],"mappings":"AAAA,SAASA,EAAE,QAAQ,kCAAiC;AACpD,SAASC,EAAE,QAAQ,kCAAiC"}
