@@ -73,20 +73,23 @@ function setNestedValue(obj, path, value) {
  * Recursively remove Payload system fields (createdAt, updatedAt, top-level id)
  * from the data before saving via payload.update().
  * Preserves Lexical rich text structures intact (they contain internal IDs that must stay).
- */ export function removeSystemFields(obj, isTopLevel = true) {
+ */ export function removeSystemFields(obj) {
     const result = {};
     for (const [key, value] of Object.entries(obj)){
         if (key === 'createdAt' || key === 'updatedAt') {
             continue;
         }
-        // Remove id only at top level (document ID), not within nested structures
-        if (isTopLevel && key === 'id') {
+        // Remove id at all levels: top-level document ID and nested block/array item IDs.
+        // For localized blocks/arrays (e.g. layout, hero.links), when updating a target locale
+        // the source-locale block IDs do not exist in the target locale and fail Payload validation.
+        // Stripping all ids lets Payload auto-generate fresh ones for the target locale.
+        if (key === 'id') {
             continue;
         }
         if (Array.isArray(value)) {
             result[key] = value.map((item)=>{
                 if (item && typeof item === 'object' && !Array.isArray(item)) {
-                    return removeSystemFields(item, false);
+                    return removeSystemFields(item);
                 }
                 return item;
             });
@@ -95,7 +98,7 @@ function setNestedValue(obj, path, value) {
                 // Preserve Lexical structures intact — they contain internal node IDs
                 result[key] = value;
             } else {
-                result[key] = removeSystemFields(value, false);
+                result[key] = removeSystemFields(value);
             }
         } else {
             result[key] = value;

@@ -9,5 +9,5 @@ export declare function applyTranslations(originalData: Record<string, unknown>,
  * from the data before saving via payload.update().
  * Preserves Lexical rich text structures intact (they contain internal IDs that must stay).
  */
-export declare function removeSystemFields(obj: Record<string, unknown>, isTopLevel?: boolean): Record<string, unknown>;
+export declare function removeSystemFields(obj: Record<string, unknown>): Record<string, unknown>;
 //# sourceMappingURL=applyTranslations.d.ts.map
