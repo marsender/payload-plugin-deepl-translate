@@ -155,13 +155,13 @@ export const TranslateButton: React.FC = () => {
             </div>
           </div>
           <div className="translate-modal__controls">
-            <Button buttonStyle="secondary" onClick={handleCancel} size="medium">
+            <Button buttonStyle="secondary" onClick={handleCancel} size="small">
               {cancelLabel}
             </Button>
             <Button
               disabled={selectedLocales.length === 0}
               onClick={handleTranslate}
-              size="medium"
+              size="small"
             >
               {translateLabel}
             </Button>
