@@ -2,8 +2,8 @@
 
 import type { Locale } from 'payload'
 
-import { Button, Modal, ReactSelect, type ReactSelectOption, useConfig, useDocumentInfo, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui'
-import React, { useCallback, useState } from 'react'
+import { Button, Modal, ReactSelect, type ReactSelectOption, useConfig, useDocumentInfo, useFormModified, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import './index.scss'
 
@@ -17,6 +17,29 @@ export const TranslateButton: React.FC = () => {
   const { t: tRaw } = useTranslation()
   // plugin-deepl-translate keys are not in Payload's strict union — cast to allow any key
   const t = tRaw as (key: string, options?: Record<string, unknown>) => string
+
+  const formModified = useFormModified()
+
+  // Tenant filtering — resolved asynchronously via the /translate-check endpoint
+  const custom = config.custom as Record<string, unknown> | undefined
+  const translateTenantsEnabled = (custom?.translateTenantsEnabled as boolean) ?? false
+  // When a filter is configured start as false (hidden) until the check resolves;
+  // when no filter is configured start as true (visible immediately).
+  const [isTenantAllowed, setIsTenantAllowed] = useState(!translateTenantsEnabled)
+
+  useEffect(() => {
+    if (!translateTenantsEnabled || !id || !collectionSlug) {
+      setIsTenantAllowed(!translateTenantsEnabled)
+      return
+    }
+    const url =
+      `${config.serverURL}${config.routes.api}/translate-check` +
+      `?collection=${encodeURIComponent(collectionSlug)}&id=${encodeURIComponent(String(id))}`
+    fetch(url, { credentials: 'include' })
+      .then((r) => r.json() as Promise<{ allowed: boolean }>)
+      .then(({ allowed }) => setIsTenantAllowed(allowed))
+      .catch(() => setIsTenantAllowed(false))
+  }, [translateTenantsEnabled, id, collectionSlug, config])
 
   // Compute available target locales (all locales except the current one)
   const localization = config.localization
@@ -95,11 +118,15 @@ export const TranslateButton: React.FC = () => {
     }
   }, [closeModal, collectionSlug, config, id, locale, selectedLocales, t])
 
-  // Hide button when: no localization, no other locales available, or doc not saved yet
-  if (!config.localization || availableTargetLocales.length === 0 || !id) {
+  // Hide when no localization, no target locales, doc not yet saved, or tenant not allowed
+  if (!config.localization || availableTargetLocales.length === 0 || !id || !isTenantAllowed) {
     return null
   }
 
+  // Disable when there are unsaved changes (user must save before translating)
+  const isDisabled = formModified || isTranslating
+
+  const saveFirstTooltip = (t('plugin-deepl-translate:saveFirstTooltip') as string) || 'Save the document before translating'
   const translateLabel = (t('plugin-deepl-translate:translateButton') as string) || 'Translate'
   const translatingLabel = (t('plugin-deepl-translate:translating') as string) || 'Translating...'
   const modalTitle = (t('plugin-deepl-translate:translateModalTitle') as string) || 'Translate Document'
@@ -109,9 +136,17 @@ export const TranslateButton: React.FC = () => {
 
   return (
     <>
-      <Button buttonStyle="secondary" disabled={isTranslating} onClick={handleOpen}>
-        {isTranslating ? translatingLabel : translateLabel}
-      </Button>
+      {/* Wrap in a span so the title tooltip is visible even when the button is disabled */}
+      <span title={formModified && !isTranslating ? saveFirstTooltip : undefined}>
+        <Button
+          buttonStyle="secondary"
+          className={isTranslating ? 'translate-button--translating' : undefined}
+          disabled={isDisabled}
+          onClick={handleOpen}
+        >
+          {isTranslating ? translatingLabel : translateLabel}
+        </Button>
+      </span>
 
       <Modal className="translate-modal" slug={MODAL_SLUG}>
         <div className="translate-modal__wrapper">

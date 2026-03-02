@@ -7,6 +7,7 @@ export type PluginTranslationKeys = {
     errorNoAdapter: string
     errorSameLocale: string
     noFieldsFound: string
+    saveFirstTooltip: string
     selectLocalesPlaceholder: string
     successMessage: string
     translateButton: string

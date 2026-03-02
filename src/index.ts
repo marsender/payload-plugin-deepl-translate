@@ -3,6 +3,7 @@ import type { Config } from 'payload'
 import type { PluginConfig } from './types.js'
 
 import { DeepLAdapter } from './adapters/deepl.js'
+import { translateCheckHandler } from './endpoints/translateCheckHandler.js'
 import { translateHandler } from './endpoints/translateHandler.js'
 import { translations } from './translations/index.js'
 import type { PluginDefaultTranslationsObject } from './translations/types.js'
@@ -64,6 +65,14 @@ export const deeplTranslatePlugin =
     ;(config.custom as Record<string, unknown>).translateAdapter = adapter
     ;(config.custom as Record<string, unknown>).translateLocaleMapping =
       pluginConfig.localeMapping ?? {}
+    // tenantFilter is a function — stored server-side only (not serialized to the client)
+    ;(config.custom as Record<string, unknown>).translateTenantsFilter =
+      pluginConfig.tenantFilter ?? null
+    // Boolean flag and field name ARE serializable and available to the client component
+    ;(config.custom as Record<string, unknown>).translateTenantsEnabled =
+      !!pluginConfig.tenantFilter
+    ;(config.custom as Record<string, unknown>).translateTenantField =
+      pluginConfig.tenantField ?? 'tenant'
 
     // Inject TranslateButton into each configured collection
     if (!config.collections) {
@@ -91,10 +100,15 @@ export const deeplTranslatePlugin =
       }
     }
 
-    // Register translation endpoint
+    // Register translation endpoints
     if (!config.endpoints) {
       config.endpoints = []
     }
+    config.endpoints.push({
+      handler: translateCheckHandler,
+      method: 'get',
+      path: '/translate-check',
+    })
     config.endpoints.push({
       handler: translateHandler,
       method: 'post',

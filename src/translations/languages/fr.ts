@@ -9,6 +9,7 @@ export const fr: PluginLanguage = {
       errorNoAdapter: 'Adaptateur de traduction non configuré',
       errorSameLocale: 'La locale source et la locale cible doivent être différentes',
       noFieldsFound: 'Aucun champ traduisible trouvé',
+      saveFirstTooltip: 'Enregistrez le document avant de traduire',
       selectLocalesPlaceholder: 'Sélectionner les locales cibles...',
       successMessage: '{{fields}} champ(s) traduit(s) vers {{locales}} locale(s)',
       translateButton: 'Traduire',
