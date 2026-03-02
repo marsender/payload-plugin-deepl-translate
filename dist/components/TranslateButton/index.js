@@ -143,13 +143,13 @@ export const TranslateButton = ()=>{
                                 /*#__PURE__*/ _jsx(Button, {
                                     buttonStyle: "secondary",
                                     onClick: handleCancel,
-                                    size: "small",
+                                    size: "medium",
                                     children: cancelLabel
                                 }),
                                 /*#__PURE__*/ _jsx(Button, {
                                     disabled: selectedLocales.length === 0,
                                     onClick: handleTranslate,
-                                    size: "small",
+                                    size: "medium",
                                     children: translateLabel
                                 })
                             ]

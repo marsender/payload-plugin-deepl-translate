@@ -2,18 +2,7 @@
 
 import type { Locale } from 'payload'
 
-import {
-  Button,
-  Modal,
-  ReactSelect,
-  type ReactSelectOption,
-  useConfig,
-  useDocumentInfo,
-  useLocale,
-  useModal,
-  useTranslation,
-  toast,
-} from '@payloadcms/ui'
+import { Button, Modal, ReactSelect, type ReactSelectOption, useConfig, useDocumentInfo, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui'
 import React, { useCallback, useState } from 'react'
 
 import './index.scss'
@@ -94,12 +83,7 @@ export const TranslateButton: React.FC = () => {
       }
 
       if (result.success) {
-        const msg =
-          result.translatedFields !== undefined && result.translatedLocales !== undefined
-            ? (t('plugin-deepl-translate:successMessage') as string)
-                .replace('{{fields}}', String(result.translatedFields))
-                .replace('{{locales}}', String(result.translatedLocales))
-            : (result.message ?? 'Translation complete')
+        const msg = result.translatedFields !== undefined && result.translatedLocales !== undefined ? (t('plugin-deepl-translate:successMessage') as string).replace('{{fields}}', String(result.translatedFields)).replace('{{locales}}', String(result.translatedLocales)) : (result.message ?? 'Translation complete')
         toast.success(msg)
       } else {
         toast.error(result.error ?? 'Translation failed')
@@ -119,21 +103,13 @@ export const TranslateButton: React.FC = () => {
   const translateLabel = (t('plugin-deepl-translate:translateButton') as string) || 'Translate'
   const translatingLabel = (t('plugin-deepl-translate:translating') as string) || 'Translating...'
   const modalTitle = (t('plugin-deepl-translate:translateModalTitle') as string) || 'Translate Document'
-  const modalDescription =
-    ((t('plugin-deepl-translate:translateModalDescription') as string) || 'Translate content from {{sourceLocale}} to:').replace(
-      '{{sourceLocale}}',
-      locale?.code?.toUpperCase() ?? '',
-    )
+  const modalDescription = ((t('plugin-deepl-translate:translateModalDescription') as string) || 'Translate content from {{sourceLocale}} to:').replace('{{sourceLocale}}', locale?.code?.toUpperCase() ?? '')
   const cancelLabel = (t('plugin-deepl-translate:cancelButton') as string) || 'Cancel'
   const placeholder = (t('plugin-deepl-translate:selectLocalesPlaceholder') as string) || 'Select target locales...'
 
   return (
     <>
-      <Button
-        buttonStyle="secondary"
-        disabled={isTranslating}
-        onClick={handleOpen}
-      >
+      <Button buttonStyle="secondary" disabled={isTranslating} onClick={handleOpen}>
         {isTranslating ? translatingLabel : translateLabel}
       </Button>
 
@@ -143,26 +119,14 @@ export const TranslateButton: React.FC = () => {
             <h3>{modalTitle}</h3>
             <p dangerouslySetInnerHTML={{ __html: modalDescription }} />
             <div className="translate-modal__select">
-              <ReactSelect
-                isMulti
-                onChange={(options) =>
-                  setSelectedLocales((options as ReactSelectOption[]) ?? [])
-                }
-                options={localeOptions}
-                placeholder={placeholder}
-                value={selectedLocales}
-              />
+              <ReactSelect isMulti onChange={(options) => setSelectedLocales((options as ReactSelectOption[]) ?? [])} options={localeOptions} placeholder={placeholder} value={selectedLocales} />
             </div>
           </div>
           <div className="translate-modal__controls">
-            <Button buttonStyle="secondary" onClick={handleCancel} size="small">
+            <Button buttonStyle="secondary" onClick={handleCancel} size="medium">
               {cancelLabel}
             </Button>
-            <Button
-              disabled={selectedLocales.length === 0}
-              onClick={handleTranslate}
-              size="small"
-            >
+            <Button disabled={selectedLocales.length === 0} onClick={handleTranslate} size="medium">
               {translateLabel}
             </Button>
           </div>
