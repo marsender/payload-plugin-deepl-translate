@@ -36,7 +36,16 @@ function makePayload(
     },
     findByID: vi.fn(async ({ id }: { id: string }) => store[id] ?? null),
     update: vi.fn(
-      async ({ id, data }: { id: string; data: Record<string, unknown>; locale?: string }) => {
+      async ({
+        id,
+        data,
+      }: {
+        id: string
+        data: Record<string, unknown>
+        locale?: string
+        overrideAccess?: boolean
+        req?: unknown
+      }) => {
         store[id] = { ...store[id], ...data }
         return store[id]
       },
@@ -187,6 +196,57 @@ describe('translateHandler — translation flow (fake adapter)', () => {
     expect(data.success).toBe(true)
     expect(data.translatedFields).toBe(0)
     expect(payload.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('translateHandler — req forwarding and re-translation', () => {
+  it('TR-002: forwards req and overrideAccess:true to payload.update', async () => {
+    const adapter = makeFakeAdapter('[FR]')
+    const payload = makePayload({ 'doc-1': { id: 'doc-1', title: 'Hello' } }, textFields, adapter)
+    const req = makeRequest(
+      { collection: 'pages', documentId: 'doc-1', sourceLocale: 'en', targetLocales: ['fr'] },
+      payload,
+    )
+
+    await translateHandler(req as never)
+
+    expect(payload.update).toHaveBeenCalledOnce()
+    const [updateArg] = payload.update.mock.calls[0]
+    expect(updateArg.req).toBe(req)
+    expect(updateArg.overrideAccess).toBe(true)
+  })
+
+  it('TR-003: re-translating calls payload.update a second time', async () => {
+    const adapter = makeFakeAdapter('[FR]')
+    const payload = makePayload({ 'doc-1': { id: 'doc-1', title: 'Hello' } }, textFields, adapter)
+    const body = { collection: 'pages', documentId: 'doc-1', sourceLocale: 'en', targetLocales: ['fr'] }
+
+    await translateHandler(makeRequest(body, payload) as never)
+    await translateHandler(makeRequest(body, payload) as never)
+
+    expect(payload.update).toHaveBeenCalledTimes(2)
+  })
+
+  it('TR-005: continues with remaining locales when adapter fails for one locale', async () => {
+    const adapter: TranslationAdapter = {
+      translate: vi.fn(async (text: string, _src: string, target: string) => {
+        if (target.toUpperCase() === 'DE') throw new Error('DeepL error')
+        return `[FR] ${text}`
+      }),
+    }
+    const payload = makePayload({ 'doc-1': { id: 'doc-1', title: 'Hello' } }, textFields, adapter)
+    const req = makeRequest(
+      { collection: 'pages', documentId: 'doc-1', sourceLocale: 'en', targetLocales: ['fr', 'de'] },
+      payload,
+    )
+
+    const res = await translateHandler(req as never)
+    const data = await res.json()
+
+    expect(data.success).toBe(true)
+    expect(data.translatedLocales).toBe(1)
+    expect(payload.update).toHaveBeenCalledTimes(1)
+    expect(payload.update.mock.calls[0][0].locale).toBe('fr')
   })
 })
 
