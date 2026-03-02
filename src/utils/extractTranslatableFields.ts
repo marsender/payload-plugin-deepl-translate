@@ -11,6 +11,7 @@ export function extractTranslatableFields(
   data: Record<string, unknown>,
   fields: Field[],
   basePath = '',
+  parentLocalized = false,
 ): TranslatableField[] {
   const result: TranslatableField[] = []
 
@@ -18,12 +19,12 @@ export function extractTranslatableFields(
     // Layout fields without a name (row, collapsible) — recurse into their children
     if (!('name' in field)) {
       if ('fields' in field && Array.isArray(field.fields)) {
-        result.push(...extractTranslatableFields(data, field.fields, basePath))
+        result.push(...extractTranslatableFields(data, field.fields, basePath, parentLocalized))
       }
       if ('tabs' in field && Array.isArray(field.tabs)) {
         for (const tab of field.tabs) {
           if ('fields' in tab && Array.isArray(tab.fields)) {
-            result.push(...extractTranslatableFields(data, tab.fields, basePath))
+            result.push(...extractTranslatableFields(data, tab.fields, basePath, parentLocalized))
           }
         }
       }
@@ -37,7 +38,11 @@ export function extractTranslatableFields(
       continue
     }
 
-    const isLocalized = 'localized' in field && field.localized
+    // A field is effectively localized when it is explicitly marked localized: true,
+    // OR when it lives inside a localized container (parentLocalized = true).
+    // The latter handles blocks/arrays/groups where the container is localized but
+    // the individual sub-fields are not marked with their own localized flag.
+    const isLocalized = parentLocalized || ('localized' in field && field.localized)
 
     // For non-localized container fields, still recurse to find localized children
     if (!isLocalized) {
@@ -112,6 +117,7 @@ export function extractTranslatableFields(
               value as Record<string, unknown>,
               field.fields,
               fieldPath,
+              true,
             ),
           )
         }
@@ -126,6 +132,7 @@ export function extractTranslatableFields(
                   item as Record<string, unknown>,
                   field.fields,
                   `${fieldPath}.${index}`,
+                  true,
                 ),
               )
             }
@@ -146,6 +153,7 @@ export function extractTranslatableFields(
                     block as Record<string, unknown>,
                     blockConfig.fields,
                     `${fieldPath}.${index}`,
+                    true,
                   ),
                 )
               }

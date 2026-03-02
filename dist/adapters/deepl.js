@@ -9,11 +9,13 @@ import * as deepl from 'deepl-node';
         this.client = new deepl.DeepLClient(apiKey);
     }
     async translate(text, sourceLang, targetLang) {
-        // DeepL expects uppercase language codes; Payload uses lowercase.
-        // NOTE: 'EN' and 'PT' are not valid DeepL target language codes.
-        // Use the plugin's `localeMapping` option to map them to regional variants:
+        // DeepL source languages never accept regional variants (e.g. 'EN-US' is invalid as source).
+        // Strip the subtag so 'en-US' → 'EN', 'fr-FR' → 'FR', etc.
+        // Target languages may have regional variants: 'EN-US', 'PT-BR', 'ZH-HANS' are all valid.
+        // Use the plugin's `localeMapping` to map targets that need regional variants:
         //   localeMapping: { en: 'en-US', pt: 'pt-BR' }
-        const source = sourceLang.toUpperCase();
+        const [baseLang] = sourceLang.toUpperCase().split('-');
+        const source = baseLang;
         const target = targetLang.toUpperCase();
         const result = await this.client.translateText(text, source, target);
         return result.text;

@@ -5,5 +5,5 @@ import type { TranslatableField } from '../types.js';
  * from a Payload document, including fields nested inside groups,
  * arrays, blocks, and tabs.
  */
-export declare function extractTranslatableFields(data: Record<string, unknown>, fields: Field[], basePath?: string): TranslatableField[];
+export declare function extractTranslatableFields(data: Record<string, unknown>, fields: Field[], basePath?: string, parentLocalized?: boolean): TranslatableField[];
 //# sourceMappingURL=extractTranslatableFields.d.ts.map

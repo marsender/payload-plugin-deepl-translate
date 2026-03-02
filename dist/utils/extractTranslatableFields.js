@@ -2,18 +2,18 @@
  * Recursively extract all localized text, textarea, and richText fields
  * from a Payload document, including fields nested inside groups,
  * arrays, blocks, and tabs.
- */ export function extractTranslatableFields(data, fields, basePath = '') {
+ */ export function extractTranslatableFields(data, fields, basePath = '', parentLocalized = false) {
     const result = [];
     for (const field of fields){
         // Layout fields without a name (row, collapsible) — recurse into their children
         if (!('name' in field)) {
             if ('fields' in field && Array.isArray(field.fields)) {
-                result.push(...extractTranslatableFields(data, field.fields, basePath));
+                result.push(...extractTranslatableFields(data, field.fields, basePath, parentLocalized));
             }
             if ('tabs' in field && Array.isArray(field.tabs)) {
                 for (const tab of field.tabs){
                     if ('fields' in tab && Array.isArray(tab.fields)) {
-                        result.push(...extractTranslatableFields(data, tab.fields, basePath));
+                        result.push(...extractTranslatableFields(data, tab.fields, basePath, parentLocalized));
                     }
                 }
             }
@@ -24,7 +24,11 @@
         if (value === undefined || value === null) {
             continue;
         }
-        const isLocalized = 'localized' in field && field.localized;
+        // A field is effectively localized when it is explicitly marked localized: true,
+        // OR when it lives inside a localized container (parentLocalized = true).
+        // The latter handles blocks/arrays/groups where the container is localized but
+        // the individual sub-fields are not marked with their own localized flag.
+        const isLocalized = parentLocalized || 'localized' in field && field.localized;
         // For non-localized container fields, still recurse to find localized children
         if (!isLocalized) {
             if (field.type === 'group' && 'fields' in field && typeof value === 'object') {
@@ -80,7 +84,7 @@
                 break;
             case 'group':
                 if ('fields' in field && typeof value === 'object') {
-                    result.push(...extractTranslatableFields(value, field.fields, fieldPath));
+                    result.push(...extractTranslatableFields(value, field.fields, fieldPath, true));
                 }
                 break;
             case 'array':
@@ -88,7 +92,7 @@
                     ;
                     value.forEach((item, index)=>{
                         if (item && typeof item === 'object' && !Array.isArray(item)) {
-                            result.push(...extractTranslatableFields(item, field.fields, `${fieldPath}.${index}`));
+                            result.push(...extractTranslatableFields(item, field.fields, `${fieldPath}.${index}`, true));
                         }
                     });
                 }
@@ -100,7 +104,7 @@
                         if (block && typeof block === 'object' && 'blockType' in block) {
                             const blockConfig = field.blocks.find((b)=>b.slug === block.blockType);
                             if (blockConfig) {
-                                result.push(...extractTranslatableFields(block, blockConfig.fields, `${fieldPath}.${index}`));
+                                result.push(...extractTranslatableFields(block, blockConfig.fields, `${fieldPath}.${index}`, true));
                             }
                         }
                     });

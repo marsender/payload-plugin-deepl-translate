@@ -15,11 +15,13 @@ export class DeepLAdapter implements TranslationAdapter {
   }
 
   async translate(text: string, sourceLang: string, targetLang: string): Promise<string> {
-    // DeepL expects uppercase language codes; Payload uses lowercase.
-    // NOTE: 'EN' and 'PT' are not valid DeepL target language codes.
-    // Use the plugin's `localeMapping` option to map them to regional variants:
+    // DeepL source languages never accept regional variants (e.g. 'EN-US' is invalid as source).
+    // Strip the subtag so 'en-US' → 'EN', 'fr-FR' → 'FR', etc.
+    // Target languages may have regional variants: 'EN-US', 'PT-BR', 'ZH-HANS' are all valid.
+    // Use the plugin's `localeMapping` to map targets that need regional variants:
     //   localeMapping: { en: 'en-US', pt: 'pt-BR' }
-    const source = sourceLang.toUpperCase() as deepl.SourceLanguageCode
+    const [baseLang] = sourceLang.toUpperCase().split('-')
+    const source = baseLang as deepl.SourceLanguageCode
     const target = targetLang.toUpperCase() as deepl.TargetLanguageCode
 
     const result = await this.client.translateText(text, source, target)

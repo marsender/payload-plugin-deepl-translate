@@ -123,6 +123,64 @@ describe('extractTranslatableFields', () => {
     expect(result[0].lexicalPath).toBeDefined()
   })
 
+  it('extracts text from children of a localized blocks field (no localized flag on child fields)', () => {
+    const blockField = {
+      name: 'content',
+      type: 'text' as const,
+      // intentionally NOT marked localized — parent blocks handles localization
+    }
+    const fields = [
+      {
+        name: 'layout',
+        type: 'blocks' as const,
+        localized: true,
+        blocks: [{ slug: 'textBlock', fields: [blockField] }],
+      },
+    ]
+    const data = {
+      layout: [{ blockType: 'textBlock', content: 'Bonjour' }],
+    }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ path: 'layout.0.content', value: 'Bonjour' })
+  })
+
+  it('extracts text from children of a localized array field (no localized flag on child fields)', () => {
+    const fields = [
+      {
+        name: 'links',
+        type: 'array' as const,
+        localized: true,
+        fields: [{ name: 'label', type: 'text' as const }],
+      },
+    ]
+    const data = { links: [{ label: 'Accueil' }, { label: 'Contact' }] }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(2)
+    expect(result[0]).toMatchObject({ path: 'links.0.label', value: 'Accueil' })
+    expect(result[1]).toMatchObject({ path: 'links.1.label', value: 'Contact' })
+  })
+
+  it('does NOT extract text from children of a non-localized blocks field when child has no localized flag', () => {
+    const fields = [
+      {
+        name: 'layout',
+        type: 'blocks' as const,
+        localized: false,
+        blocks: [
+          {
+            slug: 'textBlock',
+            fields: [{ name: 'content', type: 'text' as const }],
+            // content has no localized flag and parent is not localized → skip
+          },
+        ],
+      },
+    ]
+    const data = { layout: [{ blockType: 'textBlock', content: 'Hello' }] }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(0)
+  })
+
   it('skips autolink text nodes (URLs should not be translated)', () => {
     const fields = [
       {
