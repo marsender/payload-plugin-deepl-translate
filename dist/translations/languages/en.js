@@ -7,6 +7,7 @@ export const en = {
             errorNoAdapter: 'Translation adapter not configured',
             errorSameLocale: 'Source and target locale must differ',
             noFieldsFound: 'No translatable fields found',
+            saveFirstTooltip: 'Save the document before translating',
             selectLocalesPlaceholder: 'Select target locales...',
             successMessage: 'Translated {{fields}} field(s) to {{locales}} locale(s)',
             translateButton: 'Translate',

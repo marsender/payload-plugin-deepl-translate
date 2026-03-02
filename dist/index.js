@@ -1,4 +1,5 @@
 import { DeepLAdapter } from './adapters/deepl.js';
+import { translateCheckHandler } from './endpoints/translateCheckHandler.js';
 import { translateHandler } from './endpoints/translateHandler.js';
 import { translations } from './translations/index.js';
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
@@ -41,6 +42,9 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
         ;
         config.custom.translateAdapter = adapter;
         config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
+        config.custom.translateTenantsFilter = pluginConfig.tenantFilter ?? null;
+        config.custom.translateTenantsEnabled = !!pluginConfig.tenantFilter;
+        config.custom.translateTenantField = pluginConfig.tenantField ?? 'tenant';
         // Inject TranslateButton into each configured collection
         if (!config.collections) {
             config.collections = [];
@@ -63,10 +67,15 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
                 collection.admin.components.edit.beforeDocumentControls.push('@marsender/payload-plugin-deepl-translate/client#TranslateButton');
             }
         }
-        // Register translation endpoint
+        // Register translation endpoints
         if (!config.endpoints) {
             config.endpoints = [];
         }
+        config.endpoints.push({
+            handler: translateCheckHandler,
+            method: 'get',
+            path: '/translate-check'
+        });
         config.endpoints.push({
             handler: translateHandler,
             method: 'post',

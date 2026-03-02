@@ -1,3 +1,18 @@
+// Applied to the Translate button trigger while a translation request is in-flight.
+// Red background overrides the default disabled/secondary style to signal "please wait".
+.translate-button--translating {
+  background-color: var(--color-error-500, #c0392b) !important;
+  border-color: var(--color-error-500, #c0392b) !important;
+  color: var(--color-base-0, #fff) !important;
+  opacity: 1 !important; // prevent browser from dimming the disabled button
+
+  &:hover,
+  &:focus {
+    background-color: var(--color-error-600, #a93226) !important;
+    border-color: var(--color-error-600, #a93226) !important;
+  }
+}
+
 .translate-modal {
   .translate-modal__wrapper {
     position: fixed;
@@ -45,7 +60,7 @@
     border-top: 1px solid var(--theme-border-color);
 
     button {
-      margin: 0;
+      margin: 1rem 0 0 0;
     }
   }
 }

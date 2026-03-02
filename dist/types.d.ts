@@ -10,6 +10,29 @@ export type PluginConfig = {
     /** When true, the plugin is a no-op and returns the Payload config unchanged. */
     disabled?: boolean;
     /**
+     * Optional field path in the document that holds the tenant relationship.
+     * Defaults to `'tenant'`. Used together with `tenantFilter`.
+     */
+    tenantField?: string;
+    /**
+     * Optional function called server-side to decide whether the Translate button
+     * should be available for the current document's tenant.
+     * Receives the tenant ID (string) or `null` when the field is absent.
+     * Return `true` to enable, `false` to hide the button.
+     * When omitted, the button is available for all tenants.
+     *
+     * @example
+     * ```ts
+     * tenantFilter: (tenantId) => premiumTenantIds.includes(tenantId ?? '')
+     * // async variant also supported
+     * tenantFilter: async (tenantId) => {
+     *   const tenant = await payload.findByID({ collection: 'tenants', id: tenantId ?? '' })
+     *   return tenant?.translationEnabled === true
+     * }
+     * ```
+     */
+    tenantFilter?: (tenantId: string | null) => boolean | Promise<boolean>;
+    /**
      * Optional mapping of Payload locale codes to adapter-specific language codes.
      * Use this when your adapter requires a more specific code than what Payload uses.
      * @example { en: 'en-US', 'pt': 'pt-BR' }

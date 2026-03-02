@@ -1,7 +1,7 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
-import { Button, Modal, ReactSelect, useConfig, useDocumentInfo, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui';
-import React, { useCallback, useState } from 'react';
+import { Button, Modal, ReactSelect, useConfig, useDocumentInfo, useFormModified, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui';
+import React, { useCallback, useEffect, useState } from 'react';
 import './index.scss';
 const MODAL_SLUG = 'translate-document-modal';
 export const TranslateButton = ()=>{
@@ -12,6 +12,28 @@ export const TranslateButton = ()=>{
     const { t: tRaw } = useTranslation();
     // plugin-deepl-translate keys are not in Payload's strict union — cast to allow any key
     const t = tRaw;
+    const formModified = useFormModified();
+    // Tenant filtering — resolved asynchronously via the /translate-check endpoint
+    const custom = config.custom;
+    const translateTenantsEnabled = custom?.translateTenantsEnabled ?? false;
+    // When a filter is configured start as false (hidden) until the check resolves;
+    // when no filter is configured start as true (visible immediately).
+    const [isTenantAllowed, setIsTenantAllowed] = useState(!translateTenantsEnabled);
+    useEffect(()=>{
+        if (!translateTenantsEnabled || !id || !collectionSlug) {
+            setIsTenantAllowed(!translateTenantsEnabled);
+            return;
+        }
+        const url = `${config.serverURL}${config.routes.api}/translate-check` + `?collection=${encodeURIComponent(collectionSlug)}&id=${encodeURIComponent(String(id))}`;
+        fetch(url, {
+            credentials: 'include'
+        }).then((r)=>r.json()).then(({ allowed })=>setIsTenantAllowed(allowed)).catch(()=>setIsTenantAllowed(false));
+    }, [
+        translateTenantsEnabled,
+        id,
+        collectionSlug,
+        config
+    ]);
     // Compute available target locales (all locales except the current one)
     const localization = config.localization;
     const allLocales = localization ? localization.locales : [];
@@ -90,10 +112,13 @@ export const TranslateButton = ()=>{
         selectedLocales,
         t
     ]);
-    // Hide button when: no localization, no other locales available, or doc not saved yet
-    if (!config.localization || availableTargetLocales.length === 0 || !id) {
+    // Hide when no localization, no target locales, doc not yet saved, or tenant not allowed
+    if (!config.localization || availableTargetLocales.length === 0 || !id || !isTenantAllowed) {
         return null;
     }
+    // Disable when there are unsaved changes (user must save before translating)
+    const isDisabled = formModified || isTranslating;
+    const saveFirstTooltip = t('plugin-deepl-translate:saveFirstTooltip') || 'Save the document before translating';
     const translateLabel = t('plugin-deepl-translate:translateButton') || 'Translate';
     const translatingLabel = t('plugin-deepl-translate:translating') || 'Translating...';
     const modalTitle = t('plugin-deepl-translate:translateModalTitle') || 'Translate Document';
@@ -102,11 +127,15 @@ export const TranslateButton = ()=>{
     const placeholder = t('plugin-deepl-translate:selectLocalesPlaceholder') || 'Select target locales...';
     return /*#__PURE__*/ _jsxs(_Fragment, {
         children: [
-            /*#__PURE__*/ _jsx(Button, {
-                buttonStyle: "secondary",
-                disabled: isTranslating,
-                onClick: handleOpen,
-                children: isTranslating ? translatingLabel : translateLabel
+            /*#__PURE__*/ _jsx("span", {
+                title: formModified && !isTranslating ? saveFirstTooltip : undefined,
+                children: /*#__PURE__*/ _jsx(Button, {
+                    buttonStyle: "secondary",
+                    className: isTranslating ? 'translate-button--translating' : undefined,
+                    disabled: isDisabled,
+                    onClick: handleOpen,
+                    children: isTranslating ? translatingLabel : translateLabel
+                })
             }),
             /*#__PURE__*/ _jsx(Modal, {
                 className: "translate-modal",
