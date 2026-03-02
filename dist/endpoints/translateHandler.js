@@ -103,7 +103,9 @@ export const translateHandler = async (req)=>{
                     id: documentId,
                     collection,
                     data: dataToUpdate,
-                    locale: targetLocale
+                    locale: targetLocale,
+                    overrideAccess: true,
+                    req
                 });
                 successfulLocales++;
             } catch (localeError) {

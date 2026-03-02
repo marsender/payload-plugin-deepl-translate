@@ -123,6 +123,8 @@ export const translateHandler: PayloadHandler = async (req) => {
           collection,
           data: dataToUpdate as never,
           locale: targetLocale as never,
+          overrideAccess: true,
+          req,
         })
 
         successfulLocales++
