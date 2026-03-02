@@ -181,6 +181,61 @@ describe('extractTranslatableFields', () => {
     expect(result).toHaveLength(0)
   })
 
+  it('extracts localized fields inside unnamed tabs (SEO plugin scenario)', () => {
+    const fields = [
+      {
+        type: 'tabs' as const,
+        tabs: [
+          {
+            label: 'Content',
+            fields: [textField('title')],
+          },
+          {
+            label: 'SEO',
+            fields: [
+              {
+                name: 'meta',
+                type: 'group' as const,
+                fields: [
+                  textField('title'),
+                  textareaField('description'),
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const data = {
+      title: 'Page Title',
+      meta: { title: 'SEO Title', description: 'SEO Desc' },
+    }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(3)
+    expect(result[0]).toMatchObject({ path: 'title', value: 'Page Title' })
+    expect(result[1]).toMatchObject({ path: 'meta.title', value: 'SEO Title' })
+    expect(result[2]).toMatchObject({ path: 'meta.description', value: 'SEO Desc' })
+  })
+
+  it('extracts localized fields from a named tab (data nested under tab name)', () => {
+    const fields = [
+      {
+        type: 'tabs' as const,
+        tabs: [
+          {
+            name: 'seo',
+            label: 'SEO',
+            fields: [textField('title')],
+          },
+        ],
+      },
+    ]
+    const data = { seo: { title: 'SEO Title' } }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ path: 'seo.title', value: 'SEO Title' })
+  })
+
   it('skips autolink text nodes (URLs should not be translated)', () => {
     const fields = [
       {

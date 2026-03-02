@@ -179,6 +179,40 @@ describe('translateHandler — translation flow (fake adapter)', () => {
     expect(payload.update.mock.calls[1][0].locale).toBe('de')
   })
 
+  it('translates localized fields inside a non-localized group (SEO meta scenario)', async () => {
+    const fields: FieldConfig[] = [
+      {
+        name: 'meta',
+        type: 'group',
+        // no localized flag on the group itself — mirrors the SEO plugin's meta group
+        fields: [
+          { name: 'title', type: 'text', localized: true },
+          { name: 'description', type: 'textarea', localized: true },
+        ],
+      },
+    ]
+    const adapter = makeFakeAdapter('[FR]')
+    const payload = makePayload(
+      { 'doc-1': { id: 'doc-1', meta: { title: 'Hello', description: 'World' } } },
+      fields,
+      adapter,
+    )
+    const req = makeRequest(
+      { collection: 'pages', documentId: 'doc-1', sourceLocale: 'en', targetLocales: ['fr'] },
+      payload,
+    )
+
+    const res = await translateHandler(req as never)
+    const data = await res.json()
+
+    expect(data.success).toBe(true)
+    expect(data.translatedFields).toBe(2)
+    const [updateArg] = payload.update.mock.calls[0]
+    const meta = updateArg.data.meta as Record<string, string>
+    expect(meta.title).toBe('[FR] Hello')
+    expect(meta.description).toBe('[FR] World')
+  })
+
   it('returns success with translatedFields=0 when no localized fields exist', async () => {
     const fields: FieldConfig[] = [{ name: 'slug', type: 'text', localized: false }]
     const payload = makePayload(

@@ -13,7 +13,13 @@
             if ('tabs' in field && Array.isArray(field.tabs)) {
                 for (const tab of field.tabs){
                     if ('fields' in tab && Array.isArray(tab.fields)) {
-                        result.push(...extractTranslatableFields(data, tab.fields, basePath, parentLocalized));
+                        // Named tabs store their data nested under the tab name (e.g. tab.name = 'seo'
+                        // → document.seo.fieldName). Unnamed tabs store data at document root.
+                        const tabName = 'name' in tab ? String(tab.name) : null;
+                        const tabData = tabName != null ? data[tabName] : data;
+                        const tabPath = tabName != null ? basePath ? `${basePath}.${tabName}` : tabName : basePath;
+                        if (tabData == null) continue;
+                        result.push(...extractTranslatableFields(tabData, tab.fields, tabPath, parentLocalized));
                     }
                 }
             }
