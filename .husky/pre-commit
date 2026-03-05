@@ -4,7 +4,7 @@ export NVM_DIR="$HOME/.nvm"
 
 # Lint only staged files (fast)
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
-LINT_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|jsx)$' || true)
+LINT_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|jsx)$' | grep -v '^dist/' || true)
 
 if [ -n "$LINT_FILES" ]; then
   echo "$LINT_FILES" | xargs cross-env NODE_OPTIONS=--no-deprecation eslint
