@@ -1,1 +1,16 @@
+# Load nvm so node/tsc are available when Git runs this hook
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# Lint only staged files (fast)
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
+LINT_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|tsx|js|jsx)$' || true)
+
+if [ -n "$LINT_FILES" ]; then
+  echo "$LINT_FILES" | xargs cross-env NODE_OPTIONS=--no-deprecation eslint
+fi
+
+# Type-check full project (incremental, uses .tsbuildinfo cache)
+tsc -b
+
 pnpm test
