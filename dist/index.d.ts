@@ -3,7 +3,7 @@ import type { PluginConfig } from './types.js';
 export type { PluginConfig };
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
 export type { TranslationAdapter } from './adapters/types.js';
-export type { TranslatableField, TranslationRequest, TranslationResponse, } from './types.js';
+export type { TranslatableField, TranslationRequest, TranslationResponse } from './types.js';
 /**
  * Payload CMS plugin that adds content translation via the DeepL API
  * (or a custom translation adapter) to configured collections.

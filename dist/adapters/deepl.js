@@ -3,9 +3,10 @@ import * as deepl from 'deepl-node';
  * Built-in translation adapter using the DeepL API.
  * Translates one string per call using the official deepl-node SDK.
  * The SDK automatically routes to the Free or Pro endpoint based on the key suffix.
- */ export class DeepLAdapter {
+ */
+export class DeepLAdapter {
     client;
-    constructor(apiKey){
+    constructor(apiKey) {
         this.client = new deepl.DeepLClient(apiKey);
     }
     async translate(text, sourceLang, targetLang) {
@@ -23,8 +24,7 @@ import * as deepl from 'deepl-node';
 }
 /**
  * Convenience factory for consumers who prefer functional style.
- */ export function createDeepLAdapter(apiKey) {
+ */
+export function createDeepLAdapter(apiKey) {
     return new DeepLAdapter(apiKey);
 }
-
-//# sourceMappingURL=deepl.js.map

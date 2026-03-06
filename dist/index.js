@@ -21,82 +21,87 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
  *   ],
  * })
  * ```
- */ export const deeplTranslatePlugin = (pluginConfig)=>(config)=>{
-        if (pluginConfig.disabled) {
-            return config;
-        }
-        // Resolve the effective adapter
-        let adapter;
-        if (pluginConfig.deeplApiKey) {
-            adapter = new DeepLAdapter(pluginConfig.deeplApiKey);
-        } else if (pluginConfig.adapter) {
-            adapter = pluginConfig.adapter;
-        } else {
-            console.error('[payload-plugin-deepl-translate] No translation adapter configured. ' + 'Provide either `deeplApiKey` or a custom `adapter` in the plugin config. ' + 'Plugin will be disabled.');
-            return config;
-        }
-        // Store adapter and locale mapping for use in the endpoint handler
-        if (!config.custom) {
-            config.custom = {};
-        }
-        ;
-        config.custom.translateAdapter = adapter;
-        config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
-        config.custom.translateTenantsFilter = pluginConfig.tenantFilter ?? null;
-        config.custom.translateTenantsEnabled = !!pluginConfig.tenantFilter;
-        config.custom.translateTenantField = pluginConfig.tenantField ?? 'tenant';
-        // Inject TranslateButton into each configured collection
-        if (!config.collections) {
-            config.collections = [];
-        }
-        for (const slug of pluginConfig.collections){
-            const collection = config.collections.find((c)=>c.slug === slug);
-            if (collection) {
-                if (!collection.admin) {
-                    collection.admin = {};
-                }
-                if (!collection.admin.components) {
-                    collection.admin.components = {};
-                }
-                if (!collection.admin.components.edit) {
-                    collection.admin.components.edit = {};
-                }
-                if (!collection.admin.components.edit.beforeDocumentControls) {
-                    collection.admin.components.edit.beforeDocumentControls = [];
-                }
-                collection.admin.components.edit.beforeDocumentControls.push('@marsender/payload-plugin-deepl-translate/client#TranslateButton');
-            }
-        }
-        // Register translation endpoints
-        if (!config.endpoints) {
-            config.endpoints = [];
-        }
-        config.endpoints.push({
-            handler: translateCheckHandler,
-            method: 'get',
-            path: '/translate-check'
-        });
-        config.endpoints.push({
-            handler: translateHandler,
-            method: 'post',
-            path: '/translate'
-        });
-        // Merge plugin i18n translations into config
-        if (!config.i18n) {
-            config.i18n = {};
-        }
-        if (!config.i18n.translations) {
-            config.i18n.translations = {};
-        }
-        const i18nTranslations = config.i18n.translations;
-        for (const [locale, langObj] of Object.entries(translations)){
-            const existing = i18nTranslations[locale] ?? {};
-            i18nTranslations[locale] = {
-                ...existing,
-                'plugin-deepl-translate': langObj.translations['plugin-deepl-translate']
-            };
-        }
+ */
+export const deeplTranslatePlugin = (pluginConfig) => (config) => {
+    if (pluginConfig.disabled) {
         return config;
-    };
-
-//# sourceMappingURL=index.js.map
+    }
+    // Resolve the effective adapter
+    let adapter;
+    if (pluginConfig.deeplApiKey) {
+        adapter = new DeepLAdapter(pluginConfig.deeplApiKey);
+    }
+    else if (pluginConfig.adapter) {
+        adapter = pluginConfig.adapter;
+    }
+    else {
+        // console.error(
+        //   '[payload-plugin-deepl-translate] No translation adapter configured. ' +
+        //     'Provide either `deeplApiKey` or a custom `adapter` in the plugin config. ' +
+        //     'Plugin will be disabled.',
+        // )
+        return config;
+    }
+    // Store adapter and locale mapping for use in the endpoint handler
+    if (!config.custom) {
+        config.custom = {};
+    }
+    ;
+    config.custom.translateAdapter = adapter;
+    config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
+    config.custom.translateTenantsFilter = pluginConfig.tenantFilter ?? null;
+    config.custom.translateTenantsEnabled = !!pluginConfig.tenantFilter;
+    config.custom.translateTenantField = pluginConfig.tenantField ?? 'tenant';
+    // Inject TranslateButton into each configured collection
+    if (!config.collections) {
+        config.collections = [];
+    }
+    for (const slug of pluginConfig.collections) {
+        const collection = config.collections.find((c) => c.slug === slug);
+        if (collection) {
+            if (!collection.admin) {
+                collection.admin = {};
+            }
+            if (!collection.admin.components) {
+                collection.admin.components = {};
+            }
+            if (!collection.admin.components.edit) {
+                collection.admin.components.edit = {};
+            }
+            if (!collection.admin.components.edit.beforeDocumentControls) {
+                collection.admin.components.edit.beforeDocumentControls = [];
+            }
+            collection.admin.components.edit.beforeDocumentControls.push('@marsender/payload-plugin-deepl-translate/client#TranslateButton');
+        }
+    }
+    // Register translation endpoints
+    if (!config.endpoints) {
+        config.endpoints = [];
+    }
+    config.endpoints.push({
+        handler: translateCheckHandler,
+        method: 'get',
+        path: '/translate-check',
+    });
+    config.endpoints.push({
+        handler: translateHandler,
+        method: 'post',
+        path: '/translate',
+    });
+    // Merge plugin i18n translations into config
+    if (!config.i18n) {
+        config.i18n = {};
+    }
+    if (!config.i18n.translations) {
+        config.i18n.translations = {};
+    }
+    const i18nTranslations = config.i18n.translations;
+    for (const [locale, langObj] of Object.entries(translations)) {
+        const existing = (i18nTranslations[locale] ?? {});
+        i18nTranslations[locale] = {
+            ...existing,
+            'plugin-deepl-translate': langObj.translations['plugin-deepl-translate'],
+        };
+    }
+    return config;
+};
