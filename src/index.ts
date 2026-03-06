@@ -11,11 +11,7 @@ import type { PluginDefaultTranslationsObject } from './translations/types.js'
 export type { PluginConfig }
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js'
 export type { TranslationAdapter } from './adapters/types.js'
-export type {
-  TranslatableField,
-  TranslationRequest,
-  TranslationResponse,
-} from './types.js'
+export type { TranslatableField, TranslationRequest, TranslationResponse } from './types.js'
 
 /**
  * Payload CMS plugin that adds content translation via the DeepL API
@@ -50,11 +46,11 @@ export const deeplTranslatePlugin =
     } else if (pluginConfig.adapter) {
       adapter = pluginConfig.adapter
     } else {
-      console.error(
-        '[payload-plugin-deepl-translate] No translation adapter configured. ' +
-          'Provide either `deeplApiKey` or a custom `adapter` in the plugin config. ' +
-          'Plugin will be disabled.',
-      )
+      // console.error(
+      //   '[payload-plugin-deepl-translate] No translation adapter configured. ' +
+      //     'Provide either `deeplApiKey` or a custom `adapter` in the plugin config. ' +
+      //     'Plugin will be disabled.',
+      // )
       return config
     }
 
@@ -63,16 +59,12 @@ export const deeplTranslatePlugin =
       config.custom = {}
     }
     ;(config.custom as Record<string, unknown>).translateAdapter = adapter
-    ;(config.custom as Record<string, unknown>).translateLocaleMapping =
-      pluginConfig.localeMapping ?? {}
+    ;(config.custom as Record<string, unknown>).translateLocaleMapping = pluginConfig.localeMapping ?? {}
     // tenantFilter is a function — stored server-side only (not serialized to the client)
-    ;(config.custom as Record<string, unknown>).translateTenantsFilter =
-      pluginConfig.tenantFilter ?? null
+    ;(config.custom as Record<string, unknown>).translateTenantsFilter = pluginConfig.tenantFilter ?? null
     // Boolean flag and field name ARE serializable and available to the client component
-    ;(config.custom as Record<string, unknown>).translateTenantsEnabled =
-      !!pluginConfig.tenantFilter
-    ;(config.custom as Record<string, unknown>).translateTenantField =
-      pluginConfig.tenantField ?? 'tenant'
+    ;(config.custom as Record<string, unknown>).translateTenantsEnabled = !!pluginConfig.tenantFilter
+    ;(config.custom as Record<string, unknown>).translateTenantField = pluginConfig.tenantField ?? 'tenant'
 
     // Inject TranslateButton into each configured collection
     if (!config.collections) {
@@ -94,9 +86,7 @@ export const deeplTranslatePlugin =
         if (!collection.admin.components.edit.beforeDocumentControls) {
           collection.admin.components.edit.beforeDocumentControls = []
         }
-        collection.admin.components.edit.beforeDocumentControls.push(
-          '@marsender/payload-plugin-deepl-translate/client#TranslateButton',
-        )
+        collection.admin.components.edit.beforeDocumentControls.push('@marsender/payload-plugin-deepl-translate/client#TranslateButton')
       }
     }
 
