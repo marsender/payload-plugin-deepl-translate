@@ -3,7 +3,6 @@ import { translateCheckHandler } from './endpoints/translateCheckHandler.js';
 import { translateHandler } from './endpoints/translateHandler.js';
 import { translations } from './translations/index.js';
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
-export { TranslateButtonWrapper } from './components/TranslateButtonWrapper/index.js';
 /**
  * Payload CMS plugin that adds content translation via the DeepL API
  * (or a custom translation adapter) to configured collections.
@@ -101,7 +100,7 @@ export { TranslateButtonWrapper } from './components/TranslateButtonWrapper/inde
                 collection.admin.components.edit.beforeDocumentControls.push({
                     // RawPayloadComponent: `path` is the import path, `serverProps` are merged
                     // into the RSC props at render time alongside Payload's standard serverProps.
-                    path: '@marsender/payload-plugin-deepl-translate#TranslateButtonWrapper',
+                    path: '@marsender/payload-plugin-deepl-translate/client#TranslateButtonWrapper',
                     serverProps: {
                         collectionSlug: slug
                     }

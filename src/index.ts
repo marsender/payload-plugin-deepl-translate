@@ -12,7 +12,6 @@ export type { PluginConfig }
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js'
 export type { TranslationAdapter } from './adapters/types.js'
 export type { TranslatableField, TranslationRequest, TranslationResponse } from './types.js'
-export { TranslateButtonWrapper } from './components/TranslateButtonWrapper/index.js'
 
 /**
  * Payload CMS plugin that adds content translation via the DeepL API
@@ -117,7 +116,7 @@ export const deeplTranslatePlugin =
         collection.admin.components.edit.beforeDocumentControls.push({
           // RawPayloadComponent: `path` is the import path, `serverProps` are merged
           // into the RSC props at render time alongside Payload's standard serverProps.
-          path: '@marsender/payload-plugin-deepl-translate#TranslateButtonWrapper',
+          path: '@marsender/payload-plugin-deepl-translate/client#TranslateButtonWrapper',
           serverProps: { collectionSlug: slug },
         })
       }
