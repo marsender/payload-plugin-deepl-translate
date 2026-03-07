@@ -25,7 +25,8 @@ This plugin makes no changes to your database. It does not create collections, a
 ## Installation
 
 ```bash
-pnpm add github:marsender/payload-plugin-deepl-translate
+# From GitHub, pinned to a specific tag
+pnpm add github:marsender/payload-plugin-deepl-translate#v3.79.0
 ```
 
 ## Setup
@@ -206,6 +207,55 @@ Returns `{ "allowed": true|false }`. Called automatically by the Translate butto
 | HTTP 429 from DeepL                   | Rate limit or monthly quota exceeded — wait and retry, or upgrade DeepL plan      |
 | Fields not translated                 | Ensure fields have `localized: true` in the collection config                     |
 | `targetLang='en' is deprecated`       | DeepL no longer accepts `en` as a target — use `localeMapping: { en: 'en-US' }`   |
+
+## Development & Release
+
+### Workflow
+
+Changes are made directly in the plugin source and consumed by pinning a GitHub tag in dependent projects. Tags follow the PayloadCMS version they are compatible with (e.g. `v3.79.0`).
+
+### Making changes
+
+```bash
+cd /opt/git/marsender/payload-plugin-deepl-translate
+
+# Remove stale node_modules and lockfile before reinstalling (required when upgrading payload version)
+pnpm store prune
+rm -rf node_modules && rm pnpm-lock.yaml
+pnpm install
+
+# Optionally upgrade peer dependencies to a new PayloadCMS version
+pnpm update payload@<version> @payloadcms/ui@<version> @payloadcms/translations@<version>
+
+pnpm type-check && pnpm build
+
+git add .
+git commit -m "<message reflecting the changes>"
+git push
+```
+
+### Tagging a release
+
+```bash
+git tag v<target-version>
+git push origin v<target-version>
+```
+
+### Consuming the new release
+
+In the dependent project, update `package.json` to pin the new tag:
+
+```json
+"@marsender/payload-plugin-deepl-translate": "github:marsender/payload-plugin-deepl-translate#v<target-version>"
+```
+
+Then reinstall and verify:
+
+```bash
+pnpm install
+pnpm dedupe
+pnpm type-check
+```
 
 ## License
 
