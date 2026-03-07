@@ -55,18 +55,46 @@ export const deeplTranslatePlugin =
       return config
     }
 
-    // Store adapter and locale mapping for use in the endpoint handler
+    // Store runtime values in config.custom for use by server-side handlers and components.
+    //
+    // IMPORTANT — Payload serializes config.custom to the client (via useConfig()) using
+    // JSON serialization, which silently drops functions and class instances. Only plain
+    // serializable values (strings, booleans, numbers, plain objects) survive.
+    //
+    // Therefore:
+    //   - translateAdapter       → class instance, server-side only (used by translateHandler)
+    //   - translateTenantsFilter → function,      server-side only (used by TranslateButtonWrapper)
+    //   - translateOnAfterTranslate → function,   server-side only (used by translateHandler)
+    //   - translateLocaleMapping → plain object,  serializable (but not needed client-side here)
+    //   - translateTenantField   → string,        serializable and used server-side
     if (!config.custom) {
       config.custom = {}
     }
     ;(config.custom as Record<string, unknown>).translateAdapter = adapter
     ;(config.custom as Record<string, unknown>).translateLocaleMapping = pluginConfig.localeMapping ?? {}
-    // These are server-side only (functions are not serialized to the client)
     ;(config.custom as Record<string, unknown>).translateTenantsFilter = pluginConfig.tenantFilter ?? null
     ;(config.custom as Record<string, unknown>).translateOnAfterTranslate = pluginConfig.onAfterTranslate ?? null
     ;(config.custom as Record<string, unknown>).translateTenantField = pluginConfig.tenantField ?? 'tenant'
 
-    // Inject TranslateButton into each configured collection
+    // Register TranslateButtonWrapper (async RSC) in each configured collection's admin UI.
+    //
+    // Payload component registration mechanism used here:
+    //   Instead of a plain path string, we pass a RawPayloadComponent object:
+    //     { path, serverProps }
+    //
+    //   `serverProps` on the component object are merged into the RSC's props at render
+    //   time, on top of Payload's standard serverProps (id, payload, i18n, locale, …).
+    //   This lets us bake per-collection data (collectionSlug) into the registration at
+    //   config time, without creating a separate component per collection.
+    //
+    //   See: RawPayloadComponent in payload/dist/config/types.d.ts
+    //        RenderServerComponent in @payloadcms/ui/elements/RenderServerComponent
+    //
+    // Why a server component wrapper instead of a client component with a fetch:
+    //   The tenantFilter function lives in config.custom and is NOT serialized to the
+    //   client. A client component cannot run the filter directly; it would need an API
+    //   call per document load. The RSC wrapper runs the filter server-side during page
+    //   rendering and conditionally renders TranslateButton, eliminating the round-trip.
     if (!config.collections) {
       config.collections = []
     }
@@ -87,6 +115,8 @@ export const deeplTranslatePlugin =
           collection.admin.components.edit.beforeDocumentControls = []
         }
         collection.admin.components.edit.beforeDocumentControls.push({
+          // RawPayloadComponent: `path` is the import path, `serverProps` are merged
+          // into the RSC props at render time alongside Payload's standard serverProps.
           path: '@marsender/payload-plugin-deepl-translate#TranslateButtonWrapper',
           serverProps: { collectionSlug: slug },
         })

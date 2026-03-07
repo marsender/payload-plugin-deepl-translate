@@ -1,14 +1,11 @@
 import { jsx as _jsx } from "react/jsx-runtime";
-import React from 'react';
 import { TranslateButton } from '../TranslateButton/index.js';
 /**
- * Server component wrapper for the TranslateButton.
- * Evaluates the tenantFilter server-side (no client-side API call) and renders
- * the button only when translation is allowed for the current document's tenant.
+ * Async React Server Component wrapper for TranslateButton.
  *
- * Registered per-collection with `serverProps: { collectionSlug }` so the
- * collection slug is baked in at config time, while `id` and `payload` are
- * injected by Payload's standard serverProps at render time.
+ * Runs the tenantFilter entirely server-side during page rendering so no
+ * client-side API call is needed to decide whether to show the button.
+ * Renders TranslateButton when translation is allowed, null otherwise.
  */ export const TranslateButtonWrapper = async ({ collectionSlug, id, payload })=>{
     if (!id || !collectionSlug || !payload) return null;
     const custom = payload.config.custom;
