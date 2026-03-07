@@ -100,4 +100,6 @@ export type TranslationResponse = {
   translatedFields?: number
   /** Number of locales successfully updated (present on success). */
   translatedLocales?: number
+  /** Total characters sent to the translation API across all locales (present on success). */
+  translatedCharacters?: number
 }

@@ -106,6 +106,7 @@ export const translateHandler: PayloadHandler = async (req) => {
     }
 
     let successfulLocales = 0
+    let translatedCharacters = 0
     const localeErrors: Record<string, string> = {}
 
     for (const targetLocale of targetLocales) {
@@ -155,6 +156,7 @@ export const translateHandler: PayloadHandler = async (req) => {
 
         payload.logger.info(`[translate] Successfully saved locale=${targetLocale}`)
         successfulLocales++
+        translatedCharacters += translatableFields.reduce((sum, f) => sum + f.value.length, 0)
       } catch (localeError) {
         const errMsg = localeError instanceof Error ? localeError.message : String(localeError)
         const errStack = localeError instanceof Error ? (localeError.stack ?? '') : ''
@@ -174,6 +176,7 @@ export const translateHandler: PayloadHandler = async (req) => {
         ? `Translation failed: ${translatableFields.length} segment(s) extracted but 0/${targetLocales.length} locale(s) saved — check server logs`
         : `Translated ${translatableFields.length} segment(s) to ${successfulLocales}/${targetLocales.length} locale(s)${hasErrors ? ' (partial — see errors)' : ''}`,
       success: !allFailed,
+      translatedCharacters,
       translatedFields: translatableFields.length,
       translatedLocales: successfulLocales,
     } as TranslationResponse)
