@@ -1,7 +1,7 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { Button, Modal, ReactSelect, useConfig, useDocumentInfo, useFormModified, useLocale, useModal, useTranslation, toast } from '@payloadcms/ui';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import './index.scss';
 const MODAL_SLUG = 'translate-document-modal';
 export const TranslateButton = ()=>{
@@ -13,25 +13,6 @@ export const TranslateButton = ()=>{
     // plugin-deepl-translate keys are not in Payload's strict union — cast to allow any key
     const t = tRaw;
     const formModified = useFormModified();
-    // Tenant filtering — always resolved via the /translate-check endpoint.
-    // Start hidden; the server decides whether to allow (no filter → allowed: true,
-    // with filter → checks tenant settings). This avoids depending on config.custom
-    // being serialized to the client (functions/class instances are stripped).
-    const [isTenantAllowed, setIsTenantAllowed] = useState(false);
-    useEffect(()=>{
-        if (!id || !collectionSlug) {
-            setIsTenantAllowed(false);
-            return;
-        }
-        const url = `${config.serverURL}${config.routes.api}/translate-check` + `?collection=${encodeURIComponent(collectionSlug)}&id=${encodeURIComponent(String(id))}`;
-        fetch(url, {
-            credentials: 'include'
-        }).then((r)=>r.json()).then(({ allowed })=>setIsTenantAllowed(allowed)).catch(()=>setIsTenantAllowed(false));
-    }, [
-        id,
-        collectionSlug,
-        config
-    ]);
     // Compute available target locales (all locales except the current one)
     const localization = config.localization;
     const allLocales = localization ? localization.locales : [];
@@ -110,8 +91,8 @@ export const TranslateButton = ()=>{
         selectedLocales,
         t
     ]);
-    // Hide when no localization, no target locales, doc not yet saved, or tenant not allowed
-    if (!config.localization || availableTargetLocales.length === 0 || !id || !isTenantAllowed) {
+    // Hide when no localization, no target locales, or doc not yet saved
+    if (!config.localization || availableTargetLocales.length === 0 || !id) {
         return null;
     }
     // Disable when there are unsaved changes (user must save before translating)

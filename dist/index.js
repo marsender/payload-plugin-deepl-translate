@@ -3,6 +3,7 @@ import { translateCheckHandler } from './endpoints/translateCheckHandler.js';
 import { translateHandler } from './endpoints/translateHandler.js';
 import { translations } from './translations/index.js';
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
+export { TranslateButtonWrapper } from './components/TranslateButtonWrapper/index.js';
 /**
  * Payload CMS plugin that adds content translation via the DeepL API
  * (or a custom translation adapter) to configured collections.
@@ -48,7 +49,6 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
         config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
         config.custom.translateTenantsFilter = pluginConfig.tenantFilter ?? null;
         config.custom.translateOnAfterTranslate = pluginConfig.onAfterTranslate ?? null;
-        config.custom.translateTenantsEnabled = !!pluginConfig.tenantFilter;
         config.custom.translateTenantField = pluginConfig.tenantField ?? 'tenant';
         // Inject TranslateButton into each configured collection
         if (!config.collections) {
@@ -69,7 +69,12 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
                 if (!collection.admin.components.edit.beforeDocumentControls) {
                     collection.admin.components.edit.beforeDocumentControls = [];
                 }
-                collection.admin.components.edit.beforeDocumentControls.push('@marsender/payload-plugin-deepl-translate/client#TranslateButton');
+                collection.admin.components.edit.beforeDocumentControls.push({
+                    path: '@marsender/payload-plugin-deepl-translate#TranslateButtonWrapper',
+                    serverProps: {
+                        collectionSlug: slug
+                    }
+                });
             }
         }
         // Register translation endpoints
