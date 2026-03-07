@@ -13,7 +13,9 @@ export const en = {
             translateButton: 'Translate',
             translateModalDescription: 'Translate content from {{sourceLocale}} to:',
             translateModalTitle: 'Translate Document',
-            translating: 'Translating...',
-        },
-    },
+            translating: 'Translating...'
+        }
+    }
 };
+
+//# sourceMappingURL=en.js.map

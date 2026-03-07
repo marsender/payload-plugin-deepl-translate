@@ -82,6 +82,8 @@ export type TranslationRequest = {
 export type TranslationResponse = {
     /** Human-readable error description (present on failure). */
     error?: string;
+    /** Per-locale error details when some locales failed. */
+    errors?: Record<string, string>;
     /** Human-readable success summary (present on success). */
     message?: string;
     /** Overall outcome of the translation request. */

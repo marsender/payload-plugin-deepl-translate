@@ -13,7 +13,9 @@ export const fr = {
             translateButton: 'Traduire',
             translateModalDescription: 'Traduire le contenu de {{sourceLocale}} vers\u00a0:',
             translateModalTitle: 'Traduire le document',
-            translating: 'Traduction en cours...',
-        },
-    },
+            translating: 'Traduction en cours...'
+        }
+    }
 };
+
+//# sourceMappingURL=fr.js.map

@@ -14,3 +14,6 @@ fi
 tsc -b
 
 pnpm test
+
+pnpm build
+git add dist/
