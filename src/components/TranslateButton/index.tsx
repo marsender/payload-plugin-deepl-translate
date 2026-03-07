@@ -20,16 +20,15 @@ export const TranslateButton: React.FC = () => {
 
   const formModified = useFormModified()
 
-  // Tenant filtering — resolved asynchronously via the /translate-check endpoint
-  const custom = config.custom as Record<string, unknown> | undefined
-  const translateTenantsEnabled = (custom?.translateTenantsEnabled as boolean) ?? false
-  // When a filter is configured start as false (hidden) until the check resolves;
-  // when no filter is configured start as true (visible immediately).
-  const [isTenantAllowed, setIsTenantAllowed] = useState(!translateTenantsEnabled)
+  // Tenant filtering — always resolved via the /translate-check endpoint.
+  // Start hidden; the server decides whether to allow (no filter → allowed: true,
+  // with filter → checks tenant settings). This avoids depending on config.custom
+  // being serialized to the client (functions/class instances are stripped).
+  const [isTenantAllowed, setIsTenantAllowed] = useState(false)
 
   useEffect(() => {
-    if (!translateTenantsEnabled || !id || !collectionSlug) {
-      setIsTenantAllowed(!translateTenantsEnabled)
+    if (!id || !collectionSlug) {
+      setIsTenantAllowed(false)
       return
     }
     const url =
@@ -39,7 +38,7 @@ export const TranslateButton: React.FC = () => {
       .then((r) => r.json() as Promise<{ allowed: boolean }>)
       .then(({ allowed }) => setIsTenantAllowed(allowed))
       .catch(() => setIsTenantAllowed(false))
-  }, [translateTenantsEnabled, id, collectionSlug, config])
+  }, [id, collectionSlug, config])
 
   // Compute available target locales (all locales except the current one)
   const localization = config.localization

@@ -13,15 +13,14 @@ export const TranslateButton = ()=>{
     // plugin-deepl-translate keys are not in Payload's strict union — cast to allow any key
     const t = tRaw;
     const formModified = useFormModified();
-    // Tenant filtering — resolved asynchronously via the /translate-check endpoint
-    const custom = config.custom;
-    const translateTenantsEnabled = custom?.translateTenantsEnabled ?? false;
-    // When a filter is configured start as false (hidden) until the check resolves;
-    // when no filter is configured start as true (visible immediately).
-    const [isTenantAllowed, setIsTenantAllowed] = useState(!translateTenantsEnabled);
+    // Tenant filtering — always resolved via the /translate-check endpoint.
+    // Start hidden; the server decides whether to allow (no filter → allowed: true,
+    // with filter → checks tenant settings). This avoids depending on config.custom
+    // being serialized to the client (functions/class instances are stripped).
+    const [isTenantAllowed, setIsTenantAllowed] = useState(false);
     useEffect(()=>{
-        if (!translateTenantsEnabled || !id || !collectionSlug) {
-            setIsTenantAllowed(!translateTenantsEnabled);
+        if (!id || !collectionSlug) {
+            setIsTenantAllowed(false);
             return;
         }
         const url = `${config.serverURL}${config.routes.api}/translate-check` + `?collection=${encodeURIComponent(collectionSlug)}&id=${encodeURIComponent(String(id))}`;
@@ -29,7 +28,6 @@ export const TranslateButton = ()=>{
             credentials: 'include'
         }).then((r)=>r.json()).then(({ allowed })=>setIsTenantAllowed(allowed)).catch(()=>setIsTenantAllowed(false));
     }, [
-        translateTenantsEnabled,
         id,
         collectionSlug,
         config
