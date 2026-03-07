@@ -50,7 +50,7 @@ function makePayload(
         return store[id]
       },
     ),
-    logger: { error: vi.fn() },
+    logger: { error: vi.fn(), info: vi.fn() },
   }
 }
 

@@ -12,7 +12,11 @@ export const translateCheckHandler: PayloadHandler = async (req) => {
     return Response.json({ allowed: false }, { status: 401 })
   }
 
-  const url = new URL(req.url ?? '/', 'http://localhost')
+  if (!req.url) {
+    return Response.json({ allowed: false, error: 'Missing URL' }, { status: 400 })
+  }
+
+  const url = new URL(req.url, 'http://localhost')
   const collection = url.searchParams.get('collection')
   const id = url.searchParams.get('id')
 

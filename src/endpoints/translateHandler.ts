@@ -57,6 +57,10 @@ export const translateHandler: PayloadHandler = async (req) => {
       )
     }
 
+    payload.logger.info(
+      `[translate] Starting: collection=${collection} id=${documentId} source=${sourceLocale} targets=${targetLocales.join(',')}`,
+    )
+
     // Fetch source document
     const document = await payload.findByID({
       id: documentId,
@@ -86,6 +90,10 @@ export const translateHandler: PayloadHandler = async (req) => {
       collectionConfig.fields,
     )
 
+    payload.logger.info(
+      `[translate] Extracted ${translatableFields.length} translatable text segment(s) from document ${documentId}`,
+    )
+
     if (translatableFields.length === 0) {
       return Response.json({
         message: 'No translatable fields found',
@@ -96,6 +104,7 @@ export const translateHandler: PayloadHandler = async (req) => {
     }
 
     let successfulLocales = 0
+    const localeErrors: Record<string, string> = {}
 
     for (const targetLocale of targetLocales) {
       try {
@@ -103,13 +112,22 @@ export const translateHandler: PayloadHandler = async (req) => {
         const mappedSource = localeMapping[sourceLocale] ?? sourceLocale
         const mappedTarget = localeMapping[targetLocale] ?? targetLocale
 
+        payload.logger.info(
+          `[translate] Translating ${translatableFields.length} segment(s) from ${mappedSource} to ${mappedTarget} (locale: ${targetLocale})`,
+        )
+
         // Translate each field individually (one API call per field)
         const translations: string[] = []
-        for (const field of translatableFields) {
+        for (let i = 0; i < translatableFields.length; i++) {
+          const field = translatableFields[i]
           const translated = await adapter.translate(field.value, mappedSource, mappedTarget)
+          payload.logger.info(
+            `[translate]   [${i + 1}/${translatableFields.length}] path=${field.path}${field.lexicalPath ? ' lexical=' + field.lexicalPath : ''} | "${field.value.slice(0, 50)}" → "${translated.slice(0, 50)}"`,
+          )
           translations.push(translated)
         }
 
+        payload.logger.info(`[translate] Applying translations to document data`)
         const updatedData = applyTranslations(
           document as Record<string, unknown>,
           translatableFields,
@@ -118,6 +136,9 @@ export const translateHandler: PayloadHandler = async (req) => {
 
         const dataToUpdate = removeSystemFields(updatedData)
 
+        payload.logger.info(
+          `[translate] Saving to locale=${targetLocale} collection=${collection} id=${documentId}`,
+        )
         await payload.update({
           id: documentId,
           collection,
@@ -127,23 +148,32 @@ export const translateHandler: PayloadHandler = async (req) => {
           req,
         })
 
+        payload.logger.info(`[translate] Successfully saved locale=${targetLocale}`)
         successfulLocales++
       } catch (localeError) {
+        const errMsg = localeError instanceof Error ? localeError.message : String(localeError)
+        const errStack = localeError instanceof Error ? (localeError.stack ?? '') : ''
         payload.logger.error(
-          `Translation failed for locale ${targetLocale}: ${localeError instanceof Error ? localeError.message : String(localeError)}`,
+          `[translate] Failed for locale=${targetLocale}: ${errMsg}\n${errStack}`,
         )
-        // Continue with remaining locales
+        localeErrors[targetLocale] = errMsg
       }
     }
 
+    const hasErrors = Object.keys(localeErrors).length > 0
+    const allFailed = successfulLocales === 0 && targetLocales.length > 0
+
     return Response.json({
-      message: `Translated ${translatableFields.length} field(s) to ${successfulLocales} locale(s)`,
-      success: true,
+      errors: hasErrors ? localeErrors : undefined,
+      message: allFailed
+        ? `Translation failed: ${translatableFields.length} segment(s) extracted but 0/${targetLocales.length} locale(s) saved — check server logs`
+        : `Translated ${translatableFields.length} segment(s) to ${successfulLocales}/${targetLocales.length} locale(s)${hasErrors ? ' (partial — see errors)' : ''}`,
+      success: !allFailed,
       translatedFields: translatableFields.length,
       translatedLocales: successfulLocales,
     } as TranslationResponse)
   } catch (error) {
-    req.payload?.logger?.error(`Translation handler error: ${error instanceof Error ? error.message : String(error)}`)
+    req.payload?.logger?.error(`[translate] Handler error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`)
     return Response.json(
       {
         error: error instanceof Error ? error.message : 'Translation failed',
