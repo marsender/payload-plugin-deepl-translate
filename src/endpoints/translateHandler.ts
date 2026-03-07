@@ -6,6 +6,8 @@ import type { TranslationRequest, TranslationResponse } from '../types.js'
 import { applyTranslations, removeSystemFields } from '../utils/applyTranslations.js'
 import { extractTranslatableFields } from '../utils/extractTranslatableFields.js'
 
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+
 export const translateHandler: PayloadHandler = async (req) => {
   try {
     const { payload, user } = req
@@ -125,6 +127,9 @@ export const translateHandler: PayloadHandler = async (req) => {
             `[translate]   [${i + 1}/${translatableFields.length}] path=${field.path}${field.lexicalPath ? ' lexical=' + field.lexicalPath : ''} | "${field.value.slice(0, 50)}" → "${translated.slice(0, 50)}"`,
           )
           translations.push(translated)
+          if (i < translatableFields.length - 1) {
+            await sleep(100)
+          }
         }
 
         payload.logger.info(`[translate] Applying translations to document data`)

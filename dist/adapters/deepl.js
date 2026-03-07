@@ -1,4 +1,21 @@
 import * as deepl from 'deepl-node';
+async function withRetry(fn, maxRetries = 3) {
+    let lastError;
+    for(let attempt = 0; attempt <= maxRetries; attempt++){
+        try {
+            return await fn();
+        } catch (err) {
+            lastError = err;
+            if (attempt < maxRetries) {
+                const delay = 500 * 2 ** attempt // 500ms, 1000ms, 2000ms
+                ;
+                console.warn(`[DeepLAdapter] Attempt ${attempt + 1} failed, retrying in ${delay}ms...`, err instanceof Error ? err.message : String(err));
+                await new Promise((r)=>setTimeout(r, delay));
+            }
+        }
+    }
+    throw lastError;
+}
 /**
  * Built-in translation adapter using the DeepL API.
  * Translates one string per call using the official deepl-node SDK.
@@ -17,7 +34,7 @@ import * as deepl from 'deepl-node';
         const [baseLang] = sourceLang.toUpperCase().split('-');
         const source = baseLang;
         const target = targetLang.toUpperCase();
-        const result = await this.client.translateText(text, source, target);
+        const result = await withRetry(()=>this.client.translateText(text, source, target));
         return result.text;
     }
 }

@@ -1,5 +1,6 @@
 import { applyTranslations, removeSystemFields } from '../utils/applyTranslations.js';
 import { extractTranslatableFields } from '../utils/extractTranslatableFields.js';
+const sleep = (ms)=>new Promise((r)=>setTimeout(r, ms));
 export const translateHandler = async (req)=>{
     try {
         const { payload, user } = req;
@@ -102,6 +103,9 @@ export const translateHandler = async (req)=>{
                     const translated = await adapter.translate(field.value, mappedSource, mappedTarget);
                     payload.logger.info(`[translate]   [${i + 1}/${translatableFields.length}] path=${field.path}${field.lexicalPath ? ' lexical=' + field.lexicalPath : ''} | "${field.value.slice(0, 50)}" → "${translated.slice(0, 50)}"`);
                     translations.push(translated);
+                    if (i < translatableFields.length - 1) {
+                        await sleep(100);
+                    }
                 }
                 payload.logger.info(`[translate] Applying translations to document data`);
                 const updatedData = applyTranslations(document, translatableFields, translations);
