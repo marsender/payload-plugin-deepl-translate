@@ -47,10 +47,19 @@ export const translateHandler: PayloadHandler = async (req) => {
       )
     }
 
-    // Retrieve the adapter and locale mapping stored during plugin initialization
+    // Retrieve the adapter, locale mapping and hooks stored during plugin initialization
     const custom = payload.config.custom as Record<string, unknown> | undefined
     const adapter = custom?.translateAdapter as TranslationAdapter | undefined
     const localeMapping = (custom?.translateLocaleMapping ?? {}) as Record<string, string>
+    const tenantFilter = custom?.translateTenantsFilter as
+      | ((tenantId: string | null, payload: typeof req.payload) => boolean | Promise<boolean>)
+      | null
+      | undefined
+    const onAfterTranslate = custom?.translateOnAfterTranslate as
+      | ((options: { payload: typeof req.payload; tenantId: string | null; translatedCharacters: number }) => Promise<void>)
+      | null
+      | undefined
+    const tenantFieldName = (custom?.translateTenantField as string | undefined) ?? 'tenant'
 
     if (!adapter) {
       return Response.json(
@@ -76,6 +85,28 @@ export const translateHandler: PayloadHandler = async (req) => {
         { error: 'Document not found', success: false } as TranslationResponse,
         { status: 404 },
       )
+    }
+
+    // Extract tenant ID from document for tenant-scoped checks
+    const tenantRaw = (document as Record<string, unknown>)?.[tenantFieldName]
+    const tenantId =
+      tenantRaw != null
+        ? typeof tenantRaw === 'object'
+          ? ((tenantRaw as { id?: string; value?: string }).id ??
+            (tenantRaw as { id?: string; value?: string }).value ??
+            null)
+          : String(tenantRaw)
+        : null
+
+    // Enforce tenant filter server-side (mirrors translateCheckHandler)
+    if (tenantFilter) {
+      const allowed = await tenantFilter(tenantId, payload)
+      if (!allowed) {
+        return Response.json(
+          { error: 'Translation not allowed for this tenant', success: false } as TranslationResponse,
+          { status: 403 },
+        )
+      }
     }
 
     const collectionConfig = payload.collections[collection]?.config
@@ -164,6 +195,17 @@ export const translateHandler: PayloadHandler = async (req) => {
           `[translate] Failed for locale=${targetLocale}: ${errMsg}\n${errStack}`,
         )
         localeErrors[targetLocale] = errMsg
+      }
+    }
+
+    // Invoke post-translate hook (e.g. to update usage counters)
+    if (onAfterTranslate && translatedCharacters > 0) {
+      try {
+        await onAfterTranslate({ payload, tenantId, translatedCharacters })
+      } catch (hookError) {
+        payload.logger.error(
+          `[translate] onAfterTranslate hook failed: ${hookError instanceof Error ? hookError.message : String(hookError)}`,
+        )
       }
     }
 

@@ -1,4 +1,4 @@
-import type { CollectionSlug } from 'payload';
+import type { CollectionSlug, Payload } from 'payload';
 import type { TranslationAdapter } from './adapters/types.js';
 /**
  * Plugin configuration — provide either a DeepL API key (uses built-in adapter)
@@ -31,7 +31,17 @@ export type PluginConfig = {
      * }
      * ```
      */
-    tenantFilter?: (tenantId: string | null) => boolean | Promise<boolean>;
+    tenantFilter?: (tenantId: string | null, payload: Payload) => boolean | Promise<boolean>;
+    /**
+     * Optional callback invoked after a successful translation request.
+     * Use this to update usage counters or trigger side effects.
+     * Receives the tenant ID, the Payload instance, and the total number of characters translated.
+     */
+    onAfterTranslate?: (options: {
+        payload: Payload;
+        tenantId: string | null;
+        translatedCharacters: number;
+    }) => Promise<void>;
     /**
      * Optional mapping of Payload locale codes to adapter-specific language codes.
      * Use this when your adapter requires a more specific code than what Payload uses.

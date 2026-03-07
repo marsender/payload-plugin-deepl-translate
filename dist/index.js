@@ -47,6 +47,7 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
         config.custom.translateAdapter = adapter;
         config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
         config.custom.translateTenantsFilter = pluginConfig.tenantFilter ?? null;
+        config.custom.translateOnAfterTranslate = pluginConfig.onAfterTranslate ?? null;
         config.custom.translateTenantsEnabled = !!pluginConfig.tenantFilter;
         config.custom.translateTenantField = pluginConfig.tenantField ?? 'tenant';
         // Inject TranslateButton into each configured collection

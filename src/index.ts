@@ -60,8 +60,9 @@ export const deeplTranslatePlugin =
     }
     ;(config.custom as Record<string, unknown>).translateAdapter = adapter
     ;(config.custom as Record<string, unknown>).translateLocaleMapping = pluginConfig.localeMapping ?? {}
-    // tenantFilter is a function — stored server-side only (not serialized to the client)
+    // tenantFilter and onAfterTranslate are functions — stored server-side only (not serialized to the client)
     ;(config.custom as Record<string, unknown>).translateTenantsFilter = pluginConfig.tenantFilter ?? null
+    ;(config.custom as Record<string, unknown>).translateOnAfterTranslate = pluginConfig.onAfterTranslate ?? null
     // Boolean flag and field name ARE serializable and available to the client component
     ;(config.custom as Record<string, unknown>).translateTenantsEnabled = !!pluginConfig.tenantFilter
     ;(config.custom as Record<string, unknown>).translateTenantField = pluginConfig.tenantField ?? 'tenant'

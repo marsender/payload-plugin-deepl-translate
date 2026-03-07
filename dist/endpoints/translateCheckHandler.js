@@ -51,7 +51,7 @@
         const tenantFieldName = custom?.translateTenantField ?? 'tenant';
         const tenantRaw = doc?.[tenantFieldName];
         const tenantId = tenantRaw != null ? typeof tenantRaw === 'object' ? tenantRaw.id ?? tenantRaw.value ?? null : String(tenantRaw) : null;
-        const allowed = await tenantFilter(tenantId);
+        const allowed = await tenantFilter(tenantId, payload);
         return Response.json({
             allowed
         });

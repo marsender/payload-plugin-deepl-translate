@@ -40,10 +40,13 @@ export const translateHandler = async (req)=>{
                 status: 400
             });
         }
-        // Retrieve the adapter and locale mapping stored during plugin initialization
+        // Retrieve the adapter, locale mapping and hooks stored during plugin initialization
         const custom = payload.config.custom;
         const adapter = custom?.translateAdapter;
         const localeMapping = custom?.translateLocaleMapping ?? {};
+        const tenantFilter = custom?.translateTenantsFilter;
+        const onAfterTranslate = custom?.translateOnAfterTranslate;
+        const tenantFieldName = custom?.translateTenantField ?? 'tenant';
         if (!adapter) {
             return Response.json({
                 error: 'Translation adapter not configured',
@@ -67,6 +70,21 @@ export const translateHandler = async (req)=>{
             }, {
                 status: 404
             });
+        }
+        // Extract tenant ID from document for tenant-scoped checks
+        const tenantRaw = document?.[tenantFieldName];
+        const tenantId = tenantRaw != null ? typeof tenantRaw === 'object' ? tenantRaw.id ?? tenantRaw.value ?? null : String(tenantRaw) : null;
+        // Enforce tenant filter server-side (mirrors translateCheckHandler)
+        if (tenantFilter) {
+            const allowed = await tenantFilter(tenantId, payload);
+            if (!allowed) {
+                return Response.json({
+                    error: 'Translation not allowed for this tenant',
+                    success: false
+                }, {
+                    status: 403
+                });
+            }
         }
         const collectionConfig = payload.collections[collection]?.config;
         if (!collectionConfig) {
@@ -128,6 +146,18 @@ export const translateHandler = async (req)=>{
                 const errStack = localeError instanceof Error ? localeError.stack ?? '' : '';
                 payload.logger.error(`[translate] Failed for locale=${targetLocale}: ${errMsg}\n${errStack}`);
                 localeErrors[targetLocale] = errMsg;
+            }
+        }
+        // Invoke post-translate hook (e.g. to update usage counters)
+        if (onAfterTranslate && translatedCharacters > 0) {
+            try {
+                await onAfterTranslate({
+                    payload,
+                    tenantId,
+                    translatedCharacters
+                });
+            } catch (hookError) {
+                payload.logger.error(`[translate] onAfterTranslate hook failed: ${hookError instanceof Error ? hookError.message : String(hookError)}`);
             }
         }
         const hasErrors = Object.keys(localeErrors).length > 0;
