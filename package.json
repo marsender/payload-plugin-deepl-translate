@@ -1,6 +1,6 @@
 {
   "name": "@marsender/payload-plugin-deepl-translate",
-  "version": "1.1.0",
+  "version": "3.79.0",
   "description": "DeepL translation plugin for Payload CMS with configurable adapter support",
   "keywords": [
     "payload",
