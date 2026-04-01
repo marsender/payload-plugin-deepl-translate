@@ -26,7 +26,7 @@ This plugin makes no changes to your database. It does not create collections, a
 
 ```bash
 # From GitHub, pinned to a specific tag
-pnpm add github:marsender/payload-plugin-deepl-translate#v3.79.0
+pnpm add github:marsender/payload-plugin-deepl-translate#v3.80.0
 ```
 
 ## Setup
