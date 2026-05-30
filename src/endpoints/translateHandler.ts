@@ -171,7 +171,7 @@ export const translateHandler: PayloadHandler = async (req) => {
           translations,
         )
 
-        const dataToUpdate = removeSystemFields(updatedData)
+        const dataToUpdate = removeSystemFields(updatedData, collectionConfig.fields)
 
         payload.logger.info(
           `[translate] Saving to locale=${targetLocale} collection=${collection} id=${documentId}`,

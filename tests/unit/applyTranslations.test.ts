@@ -1,6 +1,7 @@
+import type { Field } from 'payload'
 import { describe, expect, it } from 'vitest'
 
-import { applyTranslations } from '../../src/utils/applyTranslations.js'
+import { applyTranslations, removeSystemFields } from '../../src/utils/applyTranslations.js'
 import type { TranslatableField } from '../../src/types.js'
 
 describe('applyTranslations', () => {
@@ -84,5 +85,180 @@ describe('applyTranslations', () => {
     const children = paragraph.children as Record<string, unknown>[]
     const textNode = (children[0].children as Record<string, unknown>[])[0]
     expect(textNode.text).toBe('Bonjour')
+  })
+})
+
+describe('removeSystemFields', () => {
+  it('strips top-level id, createdAt, updatedAt', () => {
+    const result = removeSystemFields({
+      id: 123,
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-02',
+      title: 'Hello',
+    })
+    expect(result).toEqual({ title: 'Hello' })
+  })
+
+  it('preserves item ids in non-localized arrays (shared across locales)', () => {
+    // Reproduces the tags-translation bug: tags is an unlocalized array containing
+    // a localized label. Item ids must survive so per-locale rows aren't orphaned.
+    const fields: Field[] = [
+      {
+        name: 'tags',
+        type: 'array',
+        fields: [{ name: 'label', type: 'text', localized: true }],
+      },
+    ]
+    const result = removeSystemFields(
+      {
+        id: 7,
+        tags: [
+          { id: 'tag-1', label: 'Yoga' },
+          { id: 'tag-2', label: 'Pilates' },
+        ],
+      },
+      fields,
+    )
+    expect(result).toEqual({
+      tags: [
+        { id: 'tag-1', label: 'Yoga' },
+        { id: 'tag-2', label: 'Pilates' },
+      ],
+    })
+  })
+
+  it('strips item ids in localized arrays (per-locale structure)', () => {
+    const fields: Field[] = [
+      {
+        name: 'links',
+        type: 'array',
+        localized: true,
+        fields: [{ name: 'label', type: 'text' }],
+      },
+    ]
+    const result = removeSystemFields(
+      {
+        links: [
+          { id: 'l-1', label: 'Home' },
+          { id: 'l-2', label: 'Shop' },
+        ],
+      },
+      fields,
+    )
+    expect(result).toEqual({
+      links: [{ label: 'Home' }, { label: 'Shop' }],
+    })
+  })
+
+  it('strips block item ids in localized blocks fields', () => {
+    const fields: Field[] = [
+      {
+        name: 'layout',
+        type: 'blocks',
+        localized: true,
+        blocks: [
+          {
+            slug: 'hero',
+            fields: [{ name: 'heading', type: 'text' }],
+          },
+        ],
+      },
+    ]
+    const result = removeSystemFields(
+      {
+        layout: [{ id: 'b-1', blockType: 'hero', heading: 'Welcome' }],
+      },
+      fields,
+    )
+    expect(result).toEqual({
+      layout: [{ blockType: 'hero', heading: 'Welcome' }],
+    })
+  })
+
+  it('propagates localized context into nested arrays', () => {
+    const fields: Field[] = [
+      {
+        name: 'sections',
+        type: 'array',
+        localized: true,
+        fields: [
+          {
+            name: 'items',
+            type: 'array',
+            fields: [{ name: 'label', type: 'text' }],
+          },
+        ],
+      },
+    ]
+    const result = removeSystemFields(
+      {
+        sections: [
+          {
+            id: 's-1',
+            items: [
+              { id: 'i-1', label: 'A' },
+              { id: 'i-2', label: 'B' },
+            ],
+          },
+        ],
+      },
+      fields,
+    )
+    // Both outer and inner item ids stripped because the outer array is localized
+    expect(result).toEqual({
+      sections: [{ items: [{ label: 'A' }, { label: 'B' }] }],
+    })
+  })
+
+  it('recurses into named tabs without losing nested field info', () => {
+    const fields: Field[] = [
+      {
+        type: 'tabs',
+        tabs: [
+          {
+            name: 'meta',
+            fields: [
+              {
+                name: 'tags',
+                type: 'array',
+                fields: [{ name: 'label', type: 'text', localized: true }],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const result = removeSystemFields(
+      {
+        meta: {
+          tags: [{ id: 'mt-1', label: 'Important' }],
+        },
+      },
+      fields,
+    )
+    expect(result).toEqual({
+      meta: {
+        tags: [{ id: 'mt-1', label: 'Important' }],
+      },
+    })
+  })
+
+  it('preserves Lexical rich text structures intact', () => {
+    const lexicalState = {
+      root: {
+        type: 'root',
+        children: [
+          {
+            type: 'paragraph',
+            children: [{ type: 'text', text: 'Hi', id: 'should-stay' }],
+          },
+        ],
+      },
+    }
+    const result = removeSystemFields({
+      id: 1,
+      content: lexicalState,
+    })
+    expect(result.content).toBe(lexicalState)
   })
 })

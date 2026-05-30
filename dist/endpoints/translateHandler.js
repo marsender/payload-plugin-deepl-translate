@@ -128,7 +128,7 @@ export const translateHandler = async (req)=>{
                 }
                 payload.logger.info(`[translate] Applying translations to document data`);
                 const updatedData = applyTranslations(document, translatableFields, translations);
-                const dataToUpdate = removeSystemFields(updatedData);
+                const dataToUpdate = removeSystemFields(updatedData, collectionConfig.fields);
                 payload.logger.info(`[translate] Saving to locale=${targetLocale} collection=${collection} id=${documentId}`);
                 await payload.update({
                     id: documentId,

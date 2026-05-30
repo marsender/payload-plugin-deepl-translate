@@ -72,39 +72,99 @@ function setNestedValue(obj, path, value) {
 /**
  * Recursively remove Payload system fields (createdAt, updatedAt, top-level id)
  * from the data before saving via payload.update().
- * Preserves Lexical rich text structures intact (they contain internal IDs that must stay).
- */ export function removeSystemFields(obj) {
+ *
+ * Array/block item IDs are preserved unless the array/blocks field is `localized: true`
+ * (or sits inside a localized container). Reason: in Payload, unlocalized arrays that
+ * contain localized children share the array structure across locales — the item IDs
+ * are the join key for per-locale values. Stripping those IDs makes Payload regenerate
+ * them on update and orphans the rows in the other locale.
+ *
+ * Preserves Lexical rich text structures intact (they contain internal node IDs that must stay).
+ */ export function removeSystemFields(obj, collectionFields) {
+    const { createdAt: _ca, id: _id, updatedAt: _ua, ...rest } = obj;
+    void _ca;
+    void _id;
+    void _ua;
+    return cleanLevel(rest, collectionFields, false);
+}
+function cleanLevel(obj, fields, inLocalizedContext) {
     const result = {};
+    const fieldMap = collectNamedFields(fields ?? []);
     for (const [key, value] of Object.entries(obj)){
         if (key === 'createdAt' || key === 'updatedAt') {
             continue;
         }
-        // Remove id at all levels: top-level document ID and nested block/array item IDs.
-        // For localized blocks/arrays (e.g. layout, hero.links), when updating a target locale
-        // the source-locale block IDs do not exist in the target locale and fail Payload validation.
-        // Stripping all ids lets Payload auto-generate fresh ones for the target locale.
-        if (key === 'id') {
+        // Strip array item ids only when items are locale-specific (parent array is
+        // localized, or we're already inside a localized container).
+        if (key === 'id' && inLocalizedContext) {
             continue;
         }
+        const field = fieldMap.get(key);
         if (Array.isArray(value)) {
+            const fieldIsLocalized = field != null && 'localized' in field && field.localized === true;
+            const childLocalized = inLocalizedContext || fieldIsLocalized;
             result[key] = value.map((item)=>{
                 if (item && typeof item === 'object' && !Array.isArray(item)) {
-                    return removeSystemFields(item);
+                    let childFields;
+                    if (field?.type === 'array' && 'fields' in field) {
+                        childFields = field.fields;
+                    } else if (field?.type === 'blocks' && 'blocks' in field) {
+                        const blockType = item.blockType;
+                        childFields = field.blocks.find((b)=>b.slug === blockType)?.fields;
+                    }
+                    return cleanLevel(item, childFields, childLocalized);
                 }
                 return item;
             });
         } else if (value && typeof value === 'object') {
             if (isLexicalState(value)) {
-                // Preserve Lexical structures intact — they contain internal node IDs
                 result[key] = value;
             } else {
-                result[key] = removeSystemFields(value);
+                let childFields;
+                if (field?.type === 'group' && 'fields' in field) {
+                    childFields = field.fields;
+                }
+                result[key] = cleanLevel(value, childFields, inLocalizedContext);
             }
         } else {
             result[key] = value;
         }
     }
     return result;
+}
+/**
+ * Build a flat map of named field configs, recursing through unnamed layout
+ * wrappers (row, collapsible) and tabs. Named tabs nest their data under the
+ * tab name in the document, so we model them as a synthetic group field.
+ */ function collectNamedFields(fields) {
+    const map = new Map();
+    for (const field of fields){
+        if ('name' in field) {
+            map.set(field.name, field);
+            continue;
+        }
+        if ('fields' in field && Array.isArray(field.fields)) {
+            for (const [k, v] of collectNamedFields(field.fields)){
+                map.set(k, v);
+            }
+        }
+        if ('tabs' in field && Array.isArray(field.tabs)) {
+            for (const tab of field.tabs){
+                if ('name' in tab && tab.name && 'fields' in tab && Array.isArray(tab.fields)) {
+                    map.set(String(tab.name), {
+                        name: String(tab.name),
+                        type: 'group',
+                        fields: tab.fields
+                    });
+                } else if ('fields' in tab && Array.isArray(tab.fields)) {
+                    for (const [k, v] of collectNamedFields(tab.fields)){
+                        map.set(k, v);
+                    }
+                }
+            }
+        }
+    }
+    return map;
 }
 function isLexicalState(obj) {
     return 'root' in obj && typeof obj.root === 'object' && obj.root !== null && 'children' in obj.root;
