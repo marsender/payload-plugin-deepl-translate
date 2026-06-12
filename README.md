@@ -11,6 +11,7 @@ Adds a **Translate** button to document edit views in the Payload admin panel. C
 - Translates text, textarea, and rich text (Lexical) fields
 - Recursive discovery of localized fields in groups, arrays, blocks, and tabs
 - DeepL adapter built-in; bring your own adapter for any other provider
+- Batched translation — the whole document is sent in as few API calls as possible (DeepL: up to 50 segments per request), so large pages with many segments translate fast and stay under reverse-proxy gateway timeouts
 - Full i18n support — plugin UI labels available in English and French
 - Preserves URLs and hyperlinks in rich text (never translated)
 - Translate button is disabled while there are unsaved changes — prevents translating a stale version of the document
@@ -173,9 +174,20 @@ The mapping applies to both source and target locales. Unmapped locales are pass
 
 ```typescript
 interface TranslationAdapter {
+  // Translate a single string (required).
   translate(text: string, sourceLang: string, targetLang: string): Promise<string>
+
+  // Optional: translate many strings in as few API calls as possible.
+  // When present, the endpoint sends the whole document in batched requests
+  // instead of one call per segment — this is what keeps large documents under
+  // the gateway timeout. The result MUST be the same length as `texts` and
+  // preserve order (result[i] is the translation of texts[i]). If omitted, the
+  // endpoint falls back to calling `translate` once per segment.
+  translateBatch?(texts: string[], sourceLang: string, targetLang: string): Promise<string[]>
 }
 ```
+
+The built-in `DeepLAdapter` implements `translateBatch` (chunks of 50 per request). Custom adapters only need `translate`; implement `translateBatch` too if your provider supports multi-text requests.
 
 ### REST Endpoints
 

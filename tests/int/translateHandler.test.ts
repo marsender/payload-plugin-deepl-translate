@@ -284,6 +284,76 @@ describe('translateHandler — req forwarding and re-translation', () => {
   })
 })
 
+describe('translateHandler — batch adapter path', () => {
+  const multiFields: FieldConfig[] = [
+    { name: 'title', type: 'text', localized: true },
+    { name: 'subtitle', type: 'text', localized: true },
+  ]
+
+  // Fake adapter that implements translateBatch — the handler should prefer it
+  // and never fall back to the per-field translate().
+  function makeBatchAdapter(prefix = '[FR]'): TranslationAdapter {
+    return {
+      translate: vi.fn(async (text: string) => `${prefix} ${text}`),
+      translateBatch: vi.fn(async (texts: string[]) => texts.map((t) => `${prefix} ${t}`)),
+    }
+  }
+
+  it('uses translateBatch and does not call per-field translate', async () => {
+    const adapter = makeBatchAdapter('[FR]')
+    const payload = makePayload(
+      { 'doc-1': { id: 'doc-1', title: 'Hello', subtitle: 'World' } },
+      multiFields,
+      adapter,
+    )
+    const req = makeRequest(
+      { collection: 'pages', documentId: 'doc-1', sourceLocale: 'en', targetLocales: ['fr'] },
+      payload,
+    )
+
+    const res = await translateHandler(req as never)
+    const data = await res.json()
+
+    expect(data.success).toBe(true)
+    expect(data.translatedFields).toBe(2)
+    expect(adapter.translateBatch).toHaveBeenCalledOnce()
+    // Whole document sent in one batched call, in order
+    expect((adapter.translateBatch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toEqual([
+      'Hello',
+      'World',
+    ])
+    expect(adapter.translate).not.toHaveBeenCalled()
+
+    const [updateArg] = payload.update.mock.calls[0]
+    expect(updateArg.data.title).toBe('[FR] Hello')
+    expect(updateArg.data.subtitle).toBe('[FR] World')
+  })
+
+  it('records a locale error when translateBatch returns a mismatched length', async () => {
+    const adapter: TranslationAdapter = {
+      translate: vi.fn(),
+      // Returns fewer results than segments — handler must reject this locale
+      translateBatch: vi.fn(async () => ['only one']),
+    }
+    const payload = makePayload(
+      { 'doc-1': { id: 'doc-1', title: 'Hello', subtitle: 'World' } },
+      multiFields,
+      adapter,
+    )
+    const req = makeRequest(
+      { collection: 'pages', documentId: 'doc-1', sourceLocale: 'en', targetLocales: ['fr'] },
+      payload,
+    )
+
+    const res = await translateHandler(req as never)
+    const data = await res.json()
+
+    expect(data.success).toBe(false)
+    expect(data.translatedLocales).toBe(0)
+    expect(payload.update).not.toHaveBeenCalled()
+  })
+})
+
 describe('translateHandler — live DeepL (skipped without DEEPL_API_KEY)', () => {
   it('calls the real DeepL API and saves the translation', async () => {
     const apiKey = process.env.DEEPL_API_KEY

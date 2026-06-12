@@ -115,15 +115,27 @@ export const translateHandler = async (req)=>{
                 const mappedSource = localeMapping[sourceLocale] ?? sourceLocale;
                 const mappedTarget = localeMapping[targetLocale] ?? targetLocale;
                 payload.logger.info(`[translate] Translating ${translatableFields.length} segment(s) from ${mappedSource} to ${mappedTarget} (locale: ${targetLocale})`);
-                // Translate each field individually (one API call per field)
-                const translations = [];
-                for(let i = 0; i < translatableFields.length; i++){
-                    const field = translatableFields[i];
-                    const translated = await adapter.translate(field.value, mappedSource, mappedTarget);
-                    payload.logger.info(`[translate]   [${i + 1}/${translatableFields.length}] path=${field.path}${field.lexicalPath ? ' lexical=' + field.lexicalPath : ''} | "${field.value.slice(0, 50)}" → "${translated.slice(0, 50)}"`);
-                    translations.push(translated);
-                    if (i < translatableFields.length - 1) {
-                        await sleep(100);
+                // Translate the document. Prefer the adapter's batch path (few API
+                // calls, avoids gateway timeouts on large documents); fall back to a
+                // sequential call per field for adapters that only implement translate().
+                let translations;
+                if (adapter.translateBatch) {
+                    const values = translatableFields.map((f)=>f.value);
+                    translations = await adapter.translateBatch(values, mappedSource, mappedTarget);
+                    if (translations.length !== translatableFields.length) {
+                        throw new Error(`Batch translation returned ${translations.length} result(s) for ${translatableFields.length} segment(s) — adapter must preserve length and order`);
+                    }
+                    payload.logger.info(`[translate] Batch-translated ${translations.length} segment(s) ${mappedSource}→${mappedTarget}`);
+                } else {
+                    translations = [];
+                    for(let i = 0; i < translatableFields.length; i++){
+                        const field = translatableFields[i];
+                        const translated = await adapter.translate(field.value, mappedSource, mappedTarget);
+                        payload.logger.info(`[translate]   [${i + 1}/${translatableFields.length}] path=${field.path}${field.lexicalPath ? ' lexical=' + field.lexicalPath : ''} | "${field.value.slice(0, 50)}" → "${translated.slice(0, 50)}"`);
+                        translations.push(translated);
+                        if (i < translatableFields.length - 1) {
+                            await sleep(100);
+                        }
                     }
                 }
                 payload.logger.info(`[translate] Applying translations to document data`);

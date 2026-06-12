@@ -56,9 +56,67 @@ describe('DeepLAdapter', () => {
   })
 })
 
+describe('DeepLAdapter.translateBatch', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns [] without calling the API for an empty input', async () => {
+    const adapter = new DeepLAdapter('test-key:fx')
+    const result = await adapter.translateBatch([], 'en', 'fr')
+
+    const mockClient = vi.mocked(deepl.DeepLClient).mock.results[0].value as {
+      translateText: ReturnType<typeof vi.fn>
+    }
+    expect(result).toEqual([])
+    expect(mockClient.translateText).not.toHaveBeenCalled()
+  })
+
+  it('sends the whole array in a single call and preserves order', async () => {
+    vi.mocked(deepl.DeepLClient).mockImplementationOnce(
+      () =>
+        ({
+          translateText: vi
+            .fn()
+            .mockResolvedValue([{ text: 'un' }, { text: 'deux' }, { text: 'trois' }]),
+        }) as never,
+    )
+    const adapter = new DeepLAdapter('test-key:fx')
+    const result = await adapter.translateBatch(['one', 'two', 'three'], 'en-US', 'fr')
+
+    const mockClient = vi.mocked(deepl.DeepLClient).mock.results[0].value as {
+      translateText: ReturnType<typeof vi.fn>
+    }
+    expect(mockClient.translateText).toHaveBeenCalledTimes(1)
+    expect(mockClient.translateText).toHaveBeenCalledWith(['one', 'two', 'three'], 'EN', 'FR')
+    expect(result).toEqual(['un', 'deux', 'trois'])
+  })
+
+  it('chunks inputs larger than 50 into multiple calls, in order', async () => {
+    const translateText = vi
+      .fn()
+      .mockImplementation((texts: string[]) => Promise.resolve(texts.map((t) => ({ text: `t:${t}` }))))
+    vi.mocked(deepl.DeepLClient).mockImplementationOnce(() => ({ translateText }) as never)
+
+    const adapter = new DeepLAdapter('test-key:fx')
+    const inputs = Array.from({ length: 120 }, (_, i) => `s${i}`)
+    const result = await adapter.translateBatch(inputs, 'en', 'fr')
+
+    // 120 items → 50 + 50 + 20 = 3 calls
+    expect(translateText).toHaveBeenCalledTimes(3)
+    expect(translateText.mock.calls[0][0]).toHaveLength(50)
+    expect(translateText.mock.calls[1][0]).toHaveLength(50)
+    expect(translateText.mock.calls[2][0]).toHaveLength(20)
+    expect(result).toHaveLength(120)
+    expect(result[0]).toBe('t:s0')
+    expect(result[119]).toBe('t:s119')
+  })
+})
+
 describe('createDeepLAdapter', () => {
   it('returns a TranslationAdapter-compatible object', async () => {
     const adapter = createDeepLAdapter('test-key')
     expect(typeof adapter.translate).toBe('function')
+    expect(typeof adapter.translateBatch).toBe('function')
   })
 })
