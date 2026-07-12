@@ -61,7 +61,8 @@ export const translateHandler = async (req)=>{
             id: documentId,
             collection,
             depth: 0,
-            locale: sourceLocale
+            locale: sourceLocale,
+            req
         });
         if (!document) {
             return Response.json({
@@ -76,7 +77,7 @@ export const translateHandler = async (req)=>{
         const tenantId = tenantRaw != null ? typeof tenantRaw === 'object' ? tenantRaw.id ?? tenantRaw.value ?? null : String(tenantRaw) : null;
         // Enforce tenant filter server-side (mirrors translateCheckHandler)
         if (tenantFilter) {
-            const allowed = await tenantFilter(tenantId, payload);
+            const allowed = await tenantFilter(tenantId, payload, req);
             if (!allowed) {
                 return Response.json({
                     error: 'Translation not allowed for this tenant',
@@ -165,6 +166,7 @@ export const translateHandler = async (req)=>{
             try {
                 await onAfterTranslate({
                     payload,
+                    req,
                     tenantId,
                     translatedCharacters
                 });

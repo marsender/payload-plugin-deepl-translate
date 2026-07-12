@@ -1,4 +1,4 @@
-import type { PayloadHandler } from 'payload'
+import type { Payload, PayloadHandler, PayloadRequest } from 'payload'
 
 import type { TranslationAdapter } from '../adapters/types.js'
 import type { TranslationRequest, TranslationResponse } from '../types.js'
@@ -52,11 +52,20 @@ export const translateHandler: PayloadHandler = async (req) => {
     const adapter = custom?.translateAdapter as TranslationAdapter | undefined
     const localeMapping = (custom?.translateLocaleMapping ?? {}) as Record<string, string>
     const tenantFilter = custom?.translateTenantsFilter as
-      | ((tenantId: string | null, payload: typeof req.payload) => boolean | Promise<boolean>)
+      | ((
+          tenantId: string | null,
+          payload: Payload,
+          req?: PayloadRequest,
+        ) => boolean | Promise<boolean>)
       | null
       | undefined
     const onAfterTranslate = custom?.translateOnAfterTranslate as
-      | ((options: { payload: typeof req.payload; tenantId: string | null; translatedCharacters: number }) => Promise<void>)
+      | ((options: {
+          payload: Payload
+          req?: PayloadRequest
+          tenantId: string | null
+          translatedCharacters: number
+        }) => Promise<void>)
       | null
       | undefined
     const tenantFieldName = (custom?.translateTenantField as string | undefined) ?? 'tenant'
@@ -78,6 +87,7 @@ export const translateHandler: PayloadHandler = async (req) => {
       collection,
       depth: 0,
       locale: sourceLocale as never,
+      req,
     })
 
     if (!document) {
@@ -100,7 +110,7 @@ export const translateHandler: PayloadHandler = async (req) => {
 
     // Enforce tenant filter server-side (mirrors translateCheckHandler)
     if (tenantFilter) {
-      const allowed = await tenantFilter(tenantId, payload)
+      const allowed = await tenantFilter(tenantId, payload, req)
       if (!allowed) {
         return Response.json(
           { error: 'Translation not allowed for this tenant', success: false } as TranslationResponse,
@@ -217,7 +227,7 @@ export const translateHandler: PayloadHandler = async (req) => {
     // Invoke post-translate hook (e.g. to update usage counters)
     if (onAfterTranslate && translatedCharacters > 0) {
       try {
-        await onAfterTranslate({ payload, tenantId, translatedCharacters })
+        await onAfterTranslate({ payload, req, tenantId, translatedCharacters })
       } catch (hookError) {
         payload.logger.error(
           `[translate] onAfterTranslate hook failed: ${hookError instanceof Error ? hookError.message : String(hookError)}`,

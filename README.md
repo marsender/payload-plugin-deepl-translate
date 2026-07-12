@@ -99,16 +99,28 @@ export default buildConfig({
 
       // Called server-side each time a document is opened in the admin panel.
       // tenantId is the raw ID of the related tenant, or null if the field is empty.
-      tenantFilter: async (tenantId) => {
+      // `payload` and `req` are supplied by the plugin — always forward `req` to your Payload
+      // calls so they join the request's transaction (see "Passing `req`" below).
+      tenantFilter: async (tenantId, payload, req) => {
         if (!tenantId) return false
-        const payload = await getPayload({ config })
         const tenant = await payload.findByID({
           collection: 'tenants',
           id: tenantId,
           depth: 0,
+          req,
         })
         // Show the button only for tenants whose plan includes translation
         return tenant?.plan === 'premium' || tenant?.features?.translation === true
+      },
+
+      // Called after a successful translation — e.g. to meter usage.
+      onAfterTranslate: async ({ payload, req, tenantId, translatedCharacters }) => {
+        await payload.update({
+          collection: 'tenant-settings',
+          id: tenantId,
+          data: { charactersUsed: translatedCharacters },
+          req,
+        })
       },
     }),
   ],
@@ -116,6 +128,21 @@ export default buildConfig({
 ```
 
 When `tenantFilter` is omitted, the Translate button is visible for all tenants.
+
+### Passing `req`
+
+Both callbacks receive the `req` of the request they run under, and every Payload call you make
+inside them should forward it.
+
+A Payload call without `req` does not join the request's database transaction: it takes a fresh
+connection from the pool and runs in a transaction of its own. It cannot see writes the request
+has made but not yet committed, it commits even when the request later rolls back, and it blocks
+indefinitely on any row the request's transaction has already locked. `onAfterTranslate` writes
+(usage counters), so this matters there in particular.
+
+`req` is `undefined` in one case: when `tenantFilter` is evaluated while rendering the admin UI,
+which happens in a React Server Component that Payload gives no request. Forward it as-is — a
+`req` of `undefined` simply means there is no transaction to join.
 
 ## Using a Custom Adapter
 
@@ -167,7 +194,8 @@ The mapping applies to both source and target locales. Unmapped locales are pass
 | `adapter`       | `TranslationAdapter`                                        | Conditional | Custom adapter (mutually exclusive with `deeplApiKey`)                                                   |
 | `disabled`      | `boolean`                                                   | No          | When true, plugin is a no-op                                                                             |
 | `localeMapping` | `Record<string,string>`                                     | No          | Map Payload locale codes to provider-specific codes                                                      |
-| `tenantFilter`  | `(tenantId: string \| null) => boolean \| Promise<boolean>` | No          | Server-side function to enable/disable the button per tenant (see [Tenant Filtering](#tenant-filtering)) |
+| `tenantFilter`  | `(tenantId: string \| null, payload: Payload, req?: PayloadRequest) => boolean \| Promise<boolean>` | No | Server-side function to enable/disable the button per tenant (see [Tenant Filtering](#tenant-filtering)) |
+| `onAfterTranslate` | `(opts: { payload: Payload; req?: PayloadRequest; tenantId: string \| null; translatedCharacters: number }) => Promise<void>` | No | Called after a successful translation, e.g. to meter usage. Forward `req` to your Payload calls |
 | `tenantField`   | `string`                                                    | No          | Document field that holds the tenant relationship. Defaults to `'tenant'`                                |
 
 ### `TranslationAdapter` interface

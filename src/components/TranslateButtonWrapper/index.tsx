@@ -43,6 +43,10 @@ export const TranslateButtonWrapper = async ({ collectionSlug, id, payload }: Pr
     const tenantFieldName = (custom?.translateTenantField as string | undefined) ?? 'tenant'
 
     try {
+      // No `req` here by design: Payload's ServerProps (config/types.d.ts) hands an RSC only
+      // `payload`, never the request. This read renders the admin UI outside any request
+      // transaction, so there is no transaction to join.
+      // eslint-disable-next-line no-restricted-syntax
       const doc = await payload.findByID({
         id,
         collection: collectionSlug,

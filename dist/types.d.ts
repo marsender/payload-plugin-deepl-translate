@@ -1,4 +1,4 @@
-import type { CollectionSlug, Payload } from 'payload';
+import type { CollectionSlug, Payload, PayloadRequest } from 'payload';
 import type { TranslationAdapter } from './adapters/types.js';
 /**
  * Plugin configuration — provide either a DeepL API key (uses built-in adapter)
@@ -21,24 +21,35 @@ export type PluginConfig = {
      * Return `true` to enable, `false` to hide the button.
      * When omitted, the button is available for all tenants.
      *
+     * `req` is the request the translation is running under, and is passed so the callback's
+     * Payload calls can join its DB transaction. It is `undefined` when the filter is evaluated
+     * while rendering the admin UI (a React Server Component, which Payload gives no request) —
+     * forward it as-is either way.
+     *
      * @example
      * ```ts
      * tenantFilter: (tenantId) => premiumTenantIds.includes(tenantId ?? '')
      * // async variant also supported
-     * tenantFilter: async (tenantId) => {
-     *   const tenant = await payload.findByID({ collection: 'tenants', id: tenantId ?? '' })
+     * tenantFilter: async (tenantId, payload, req) => {
+     *   const tenant = await payload.findByID({ collection: 'tenants', id: tenantId ?? '', req })
      *   return tenant?.translationEnabled === true
      * }
      * ```
      */
-    tenantFilter?: (tenantId: string | null, payload: Payload) => boolean | Promise<boolean>;
+    tenantFilter?: (tenantId: string | null, payload: Payload, req?: PayloadRequest) => boolean | Promise<boolean>;
     /**
      * Optional callback invoked after a successful translation request.
      * Use this to update usage counters or trigger side effects.
      * Receives the tenant ID, the Payload instance, and the total number of characters translated.
+     *
+     * `req` is the request the translation ran under. Pass it to every Payload call made here:
+     * this callback writes (usage counters) inside the translation request, and a write that
+     * omits `req` runs on a separate pooled connection in its own transaction — it commits even
+     * when the request rolls back, and can deadlock against rows the request already locked.
      */
     onAfterTranslate?: (options: {
         payload: Payload;
+        req?: PayloadRequest;
         tenantId: string | null;
         translatedCharacters: number;
     }) => Promise<void>;

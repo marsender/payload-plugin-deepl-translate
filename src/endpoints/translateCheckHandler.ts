@@ -1,4 +1,4 @@
-import type { PayloadHandler } from 'payload'
+import type { Payload, PayloadHandler, PayloadRequest } from 'payload'
 
 /**
  * GET /api/translate-check?collection=<slug>&id=<documentId>
@@ -27,7 +27,11 @@ export const translateCheckHandler: PayloadHandler = async (req) => {
   const { payload } = req
   const custom = payload.config.custom as Record<string, unknown> | undefined
   const tenantFilter = custom?.translateTenantsFilter as
-    | ((tenantId: string | null, payload: typeof req.payload) => boolean | Promise<boolean>)
+    | ((
+        tenantId: string | null,
+        payload: Payload,
+        req?: PayloadRequest,
+      ) => boolean | Promise<boolean>)
     | null
     | undefined
 
@@ -56,7 +60,7 @@ export const translateCheckHandler: PayloadHandler = async (req) => {
           : String(tenantRaw)
         : null
 
-    const allowed = await tenantFilter(tenantId, payload)
+    const allowed = await tenantFilter(tenantId, payload, req)
     return Response.json({ allowed })
   } catch (_error) {
     return Response.json({ allowed: false }, { status: 500 })
