@@ -53,6 +53,7 @@
     "build:types": "tsc --emitDeclarationOnly --outDir dist",
     "clean": "rimraf -g {dist,*.tsbuildinfo}",
     "copyfiles": "rsync -a --include='*/' --include='*.html' --include='*.css' --include='*.scss' --include='*.ttf' --include='*.woff' --include='*.woff2' --include='*.eot' --include='*.svg' --include='*.jpg' --include='*.png' --include='*.json' --exclude='*' src/ dist/",
+    "hooks:install": "husky",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "vitest run",
