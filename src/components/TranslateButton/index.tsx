@@ -42,12 +42,31 @@ export const TranslateButton: React.FC = () => {
   // Pre-select ALL available target locales on mount (FR-013)
   const [isTranslating, setIsTranslating] = useState(false)
   const [selectedLocales, setSelectedLocales] = useState<ReactSelectOption[]>(localeOptions)
+  // Month-to-date usage for the progress bar, fetched when the modal opens. `null` until loaded
+  // (or when no usageProvider is configured host-side, in which case the bar stays hidden).
+  const [usage, setUsage] = useState<{ max: number; used: number } | null>(null)
 
   const handleOpen = useCallback(() => {
     // Reset selection to all locales each time the modal opens
     setSelectedLocales(localeOptions)
+    setUsage(null)
     openModal(MODAL_SLUG)
-  }, [localeOptions, openModal])
+    // Fetch fresh usage so the admin can gauge the monthly quota before translating. Best-effort:
+    // any failure simply leaves the bar hidden.
+    if (collectionSlug && id) {
+      const params = new URLSearchParams({ collection: collectionSlug, id: String(id) })
+      fetch(`${config.serverURL}${config.routes.api}/translate-check?${params.toString()}`, {
+        credentials: 'include',
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { usage?: { max: number; used: number } } | null) => {
+          if (data?.usage && data.usage.max > 0) setUsage(data.usage)
+        })
+        .catch(() => {
+          /* non-critical — bar stays hidden */
+        })
+    }
+  }, [collectionSlug, config, id, localeOptions, openModal])
 
   const handleCancel = useCallback(() => {
     closeModal(MODAL_SLUG)
@@ -113,6 +132,10 @@ export const TranslateButton: React.FC = () => {
   const cancelLabel = (t('plugin-deepl-translate:cancelButton') as string) || 'Cancel'
   const placeholder = (t('plugin-deepl-translate:selectLocalesPlaceholder') as string) || 'Select target locales...'
 
+  // Month-to-date usage as a clamped 0–100 percentage for the progress bar.
+  const usagePercent = usage ? Math.min(100, Math.max(0, (usage.used / usage.max) * 100)) : 0
+  const usageLabel = ((t('plugin-deepl-translate:usageLabel') as string) || 'Monthly usage: {{percent}}%').replace('{{percent}}', String(Math.round(usagePercent)))
+
   return (
     <>
       {/* Wrap in a span so the title tooltip is visible even when the button is disabled */}
@@ -135,6 +158,17 @@ export const TranslateButton: React.FC = () => {
             <div className="translate-modal__select">
               <ReactSelect isMulti onChange={(options) => setSelectedLocales((options as ReactSelectOption[]) ?? [])} options={localeOptions} placeholder={placeholder} value={selectedLocales} />
             </div>
+            {usage && (
+              <div className="translate-modal__usage">
+                <div className="translate-modal__usage-label">{usageLabel}</div>
+                <div
+                  className="translate-modal__usage-track"
+                  data-level={usagePercent >= 90 ? 'high' : usagePercent >= 75 ? 'medium' : 'low'}
+                >
+                  <div className="translate-modal__usage-fill" style={{ width: `${usagePercent}%` }} />
+                </div>
+              </div>
+            )}
           </div>
           <div className="translate-modal__controls">
             <Button buttonStyle="secondary" onClick={handleCancel} size="medium">

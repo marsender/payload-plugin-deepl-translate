@@ -1,9 +1,10 @@
 /**
  * GET /api/translate-check?collection=<slug>&id=<documentId>
  *
- * Evaluates the `tenantFilter` function (configured in the plugin) against the
- * current document's tenant and returns `{ allowed: boolean }`.
- * Used by the TranslateButton client component to decide whether to show itself.
+ * Evaluates the `tenantFilter` function (configured in the plugin) against the current document's
+ * tenant and returns `{ allowed: boolean, usage?: { used, max } }`. When a `usageProvider` is
+ * configured, the month-to-date translation usage is included so the Translate modal can render a
+ * progress bar. Used by the TranslateButton client component when the modal opens.
  */ export const translateCheckHandler = async (req)=>{
     if (!req.user) {
         return Response.json({
@@ -34,8 +35,9 @@
     const { payload } = req;
     const custom = payload.config.custom;
     const tenantFilter = custom?.translateTenantsFilter;
-    // No filter configured — translation is enabled for all tenants
-    if (!tenantFilter) {
+    const usageProvider = custom?.translateUsageProvider;
+    // Nothing to resolve — translation is enabled for all tenants and there is no usage to report.
+    if (!tenantFilter && !usageProvider) {
         return Response.json({
             allowed: true
         });
@@ -51,9 +53,11 @@
         const tenantFieldName = custom?.translateTenantField ?? 'tenant';
         const tenantRaw = doc?.[tenantFieldName];
         const tenantId = tenantRaw != null ? typeof tenantRaw === 'object' ? tenantRaw.id ?? tenantRaw.value ?? null : String(tenantRaw) : null;
-        const allowed = await tenantFilter(tenantId, payload, req);
+        const allowed = tenantFilter ? await tenantFilter(tenantId, payload, req) : true;
+        const usage = usageProvider ? await usageProvider(tenantId, payload, req) ?? undefined : undefined;
         return Response.json({
-            allowed
+            allowed,
+            usage
         });
     } catch (_error) {
         return Response.json({

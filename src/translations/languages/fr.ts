@@ -16,6 +16,7 @@ export const fr: PluginLanguage = {
       translateModalDescription: 'Traduire le contenu de {{sourceLocale}} vers\u00a0:',
       translateModalTitle: 'Traduire le document',
       translating: 'Traduction en cours...',
+      usageLabel: 'Utilisation mensuelle : {{percent}} %',
     },
   },
 }

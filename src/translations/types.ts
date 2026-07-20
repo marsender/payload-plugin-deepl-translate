@@ -14,6 +14,7 @@ export type PluginTranslationKeys = {
     translateModalDescription: string
     translateModalTitle: string
     translating: string
+    usageLabel: string
   }
 }
 

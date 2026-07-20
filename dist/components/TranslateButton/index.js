@@ -36,11 +36,32 @@ export const TranslateButton = ()=>{
     // Pre-select ALL available target locales on mount (FR-013)
     const [isTranslating, setIsTranslating] = useState(false);
     const [selectedLocales, setSelectedLocales] = useState(localeOptions);
+    // Month-to-date usage for the progress bar, fetched when the modal opens. `null` until loaded
+    // (or when no usageProvider is configured host-side, in which case the bar stays hidden).
+    const [usage, setUsage] = useState(null);
     const handleOpen = useCallback(()=>{
         // Reset selection to all locales each time the modal opens
         setSelectedLocales(localeOptions);
+        setUsage(null);
         openModal(MODAL_SLUG);
+        // Fetch fresh usage so the admin can gauge the monthly quota before translating. Best-effort:
+        // any failure simply leaves the bar hidden.
+        if (collectionSlug && id) {
+            const params = new URLSearchParams({
+                collection: collectionSlug,
+                id: String(id)
+            });
+            fetch(`${config.serverURL}${config.routes.api}/translate-check?${params.toString()}`, {
+                credentials: 'include'
+            }).then((res)=>res.ok ? res.json() : null).then((data)=>{
+                if (data?.usage && data.usage.max > 0) setUsage(data.usage);
+            }).catch(()=>{
+            /* non-critical — bar stays hidden */ });
+        }
     }, [
+        collectionSlug,
+        config,
+        id,
         localeOptions,
         openModal
     ]);
@@ -104,6 +125,9 @@ export const TranslateButton = ()=>{
     const modalDescription = (t('plugin-deepl-translate:translateModalDescription') || 'Translate content from {{sourceLocale}} to:').replace('{{sourceLocale}}', locale?.code?.toUpperCase() ?? '');
     const cancelLabel = t('plugin-deepl-translate:cancelButton') || 'Cancel';
     const placeholder = t('plugin-deepl-translate:selectLocalesPlaceholder') || 'Select target locales...';
+    // Month-to-date usage as a clamped 0–100 percentage for the progress bar.
+    const usagePercent = usage ? Math.min(100, Math.max(0, usage.used / usage.max * 100)) : 0;
+    const usageLabel = (t('plugin-deepl-translate:usageLabel') || 'Monthly usage: {{percent}}%').replace('{{percent}}', String(Math.round(usagePercent)));
     return /*#__PURE__*/ _jsxs(_Fragment, {
         children: [
             /*#__PURE__*/ _jsx("span", {
@@ -142,6 +166,25 @@ export const TranslateButton = ()=>{
                                         placeholder: placeholder,
                                         value: selectedLocales
                                     })
+                                }),
+                                usage && /*#__PURE__*/ _jsxs("div", {
+                                    className: "translate-modal__usage",
+                                    children: [
+                                        /*#__PURE__*/ _jsx("div", {
+                                            className: "translate-modal__usage-label",
+                                            children: usageLabel
+                                        }),
+                                        /*#__PURE__*/ _jsx("div", {
+                                            className: "translate-modal__usage-track",
+                                            "data-level": usagePercent >= 90 ? 'high' : usagePercent >= 75 ? 'medium' : 'low',
+                                            children: /*#__PURE__*/ _jsx("div", {
+                                                className: "translate-modal__usage-fill",
+                                                style: {
+                                                    width: `${usagePercent}%`
+                                                }
+                                            })
+                                        })
+                                    ]
                                 })
                             ]
                         }),

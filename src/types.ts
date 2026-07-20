@@ -60,6 +60,35 @@ export type PluginConfig = {
     translatedCharacters: number
   }) => Promise<void>
   /**
+   * Optional function called server-side to report the tenant's month-to-date translation usage,
+   * so the Translate modal can show a progress bar before a translation is requested. Receives the
+   * tenant ID (string) or `null` when the field is absent. Return `null` to omit the bar (e.g. no
+   * billing cap for this tenant).
+   *
+   * `req` is the request the check runs under (present for the `/translate-check` endpoint call,
+   * `undefined` when evaluated while rendering the admin UI) — forward it as-is so any Payload
+   * reads join the request transaction when there is one.
+   *
+   * @example
+   * ```ts
+   * usageProvider: async (tenantId, payload, req) => {
+   *   const { docs } = await payload.find({
+   *     collection: 'tenant-settings',
+   *     where: { tenant: { equals: tenantId } },
+   *     limit: 1,
+   *     req,
+   *   })
+   *   const s = docs[0]?.tools?.translation
+   *   return s ? { used: s.nbCharacters ?? 0, max: s.maxCharacters } : null
+   * }
+   * ```
+   */
+  usageProvider?: (
+    tenantId: string | null,
+    payload: Payload,
+    req?: PayloadRequest,
+  ) => Promise<TranslationUsage | null> | TranslationUsage | null
+  /**
    * Optional mapping of Payload locale codes to adapter-specific language codes.
    * Use this when your adapter requires a more specific code than what Payload uses.
    * @example { en: 'en-US', 'pt': 'pt-BR' }
@@ -77,6 +106,17 @@ export type PluginConfig = {
       deeplApiKey?: never
     }
 )
+
+/**
+ * Month-to-date translation usage for the current document's tenant, used to render the
+ * progress bar in the Translate modal. `max` of 0 (or less) means "no cap" — the bar is hidden.
+ */
+export type TranslationUsage = {
+  /** Characters translated so far this billing period. */
+  used: number
+  /** Monthly character allowance. */
+  max: number
+}
 
 /**
  * A single localized field extracted from a Payload document, ready for translation.

@@ -17,6 +17,7 @@ Adds a **Translate** button to document edit views in the Payload admin panel. C
 - Translate button is disabled while there are unsaved changes — prevents translating a stale version of the document
 - Translate button turns red while a translation is in progress — visual cue to wait before navigating away
 - Per-tenant filtering via a server-side `tenantFilter` function — hide the button for tenants whose billing plan does not include translation
+- Optional monthly-usage progress bar in the Translate modal via a server-side `usageProvider` function — shows month-to-date consumption against the quota before a translation is requested
 - Structured as an ESM package, same pattern as `payload-plugin-ecommerce`
 
 ## Zero database footprint
@@ -122,6 +123,18 @@ export default buildConfig({
           req,
         })
       },
+
+      // Feeds the progress bar shown in the Translate modal. Return the tenant's month-to-date
+      // usage against its quota, or null to hide the bar.
+      usageProvider: async (tenantId, payload, req) => {
+        if (!tenantId) return null
+        const settings = await payload.findByID({
+          collection: 'tenant-settings',
+          id: tenantId,
+          req,
+        })
+        return { used: settings?.charactersUsed ?? 0, max: settings?.charactersQuota ?? 0 }
+      },
     }),
   ],
 })
@@ -196,6 +209,7 @@ The mapping applies to both source and target locales. Unmapped locales are pass
 | `localeMapping` | `Record<string,string>`                                     | No          | Map Payload locale codes to provider-specific codes                                                      |
 | `tenantFilter`  | `(tenantId: string \| null, payload: Payload, req?: PayloadRequest) => boolean \| Promise<boolean>` | No | Server-side function to enable/disable the button per tenant (see [Tenant Filtering](#tenant-filtering)) |
 | `onAfterTranslate` | `(opts: { payload: Payload; req?: PayloadRequest; tenantId: string \| null; translatedCharacters: number }) => Promise<void>` | No | Called after a successful translation, e.g. to meter usage. Forward `req` to your Payload calls |
+| `usageProvider` | `(tenantId: string \| null, payload: Payload, req?: PayloadRequest) => TranslationUsage \| null \| Promise<TranslationUsage \| null>` | No | Returns `{ used, max }` (characters) so the Translate modal shows a monthly-usage bar. Return `null`, or `max <= 0`, to hide the bar |
 | `tenantField`   | `string`                                                    | No          | Document field that holds the tenant relationship. Defaults to `'tenant'`                                |
 
 ### `TranslationAdapter` interface
@@ -234,7 +248,7 @@ Requires authenticated Payload session.
 
 `GET {serverURL}/api/translate-check?collection=<slug>&id=<documentId>`
 
-Returns `{ "allowed": true|false }`. Called automatically by the Translate button when `tenantFilter` is configured. Requires authenticated Payload session.
+Returns `{ "allowed": true|false, "usage"?: { "used": number, "max": number } }`. Called automatically by the Translate button when the modal opens. `usage` is present only when a `usageProvider` is configured and returns a non-null value. Requires authenticated Payload session.
 
 ## Troubleshooting
 

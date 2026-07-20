@@ -11,7 +11,7 @@ import type { PluginDefaultTranslationsObject } from './translations/types.js'
 export type { PluginConfig }
 export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js'
 export type { TranslationAdapter } from './adapters/types.js'
-export type { TranslatableField, TranslationRequest, TranslationResponse } from './types.js'
+export type { TranslatableField, TranslationRequest, TranslationResponse, TranslationUsage } from './types.js'
 
 /**
  * Payload CMS plugin that adds content translation via the DeepL API
@@ -63,6 +63,7 @@ export const deeplTranslatePlugin =
     // Therefore:
     //   - translateAdapter       → class instance, server-side only (used by translateHandler)
     //   - translateTenantsFilter → function,      server-side only (used by TranslateButtonWrapper)
+    //   - translateUsageProvider → function,      server-side only (used by translateCheckHandler)
     //   - translateOnAfterTranslate → function,   server-side only (used by translateHandler)
     //   - translateLocaleMapping → plain object,  serializable (but not needed client-side here)
     //   - translateTenantField   → string,        serializable and used server-side
@@ -72,6 +73,7 @@ export const deeplTranslatePlugin =
     ;(config.custom as Record<string, unknown>).translateAdapter = adapter
     ;(config.custom as Record<string, unknown>).translateLocaleMapping = pluginConfig.localeMapping ?? {}
     ;(config.custom as Record<string, unknown>).translateTenantsFilter = pluginConfig.tenantFilter ?? null
+    ;(config.custom as Record<string, unknown>).translateUsageProvider = pluginConfig.usageProvider ?? null
     ;(config.custom as Record<string, unknown>).translateOnAfterTranslate = pluginConfig.onAfterTranslate ?? null
     ;(config.custom as Record<string, unknown>).translateTenantField = pluginConfig.tenantField ?? 'tenant'
 

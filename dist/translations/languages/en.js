@@ -13,7 +13,8 @@ export const en = {
             translateButton: 'Translate',
             translateModalDescription: 'Translate content from {{sourceLocale}} to:',
             translateModalTitle: 'Translate Document',
-            translating: 'Translating...'
+            translating: 'Translating...',
+            usageLabel: 'Monthly usage: {{percent}}%'
         }
     }
 };

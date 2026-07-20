@@ -1,1 +1,1 @@
-{"version":3,"file":"translateCheckHandler.d.ts","sourceRoot":"","sources":["../../src/endpoints/translateCheckHandler.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAW,cAAc,EAAkB,MAAM,SAAS,CAAA;AAEtE;;;;;;GAMG;AACH,eAAO,MAAM,qBAAqB,EAAE,cA0DnC,CAAA"}
+{"version":3,"file":"translateCheckHandler.d.ts","sourceRoot":"","sources":["../../src/endpoints/translateCheckHandler.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAW,cAAc,EAAkB,MAAM,SAAS,CAAA;AAgBtE;;;;;;;GAOG;AACH,eAAO,MAAM,qBAAqB,EAAE,cAqDnC,CAAA"}

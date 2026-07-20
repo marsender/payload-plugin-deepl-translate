@@ -48,6 +48,7 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
         // Therefore:
         //   - translateAdapter       → class instance, server-side only (used by translateHandler)
         //   - translateTenantsFilter → function,      server-side only (used by TranslateButtonWrapper)
+        //   - translateUsageProvider → function,      server-side only (used by translateCheckHandler)
         //   - translateOnAfterTranslate → function,   server-side only (used by translateHandler)
         //   - translateLocaleMapping → plain object,  serializable (but not needed client-side here)
         //   - translateTenantField   → string,        serializable and used server-side
@@ -58,6 +59,7 @@ export { DeepLAdapter, createDeepLAdapter } from './adapters/deepl.js';
         config.custom.translateAdapter = adapter;
         config.custom.translateLocaleMapping = pluginConfig.localeMapping ?? {};
         config.custom.translateTenantsFilter = pluginConfig.tenantFilter ?? null;
+        config.custom.translateUsageProvider = pluginConfig.usageProvider ?? null;
         config.custom.translateOnAfterTranslate = pluginConfig.onAfterTranslate ?? null;
         config.custom.translateTenantField = pluginConfig.tenantField ?? 'tenant';
         // Register TranslateButtonWrapper (async RSC) in each configured collection's admin UI.
