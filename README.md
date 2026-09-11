@@ -278,8 +278,9 @@ pnpm store prune
 rm -rf node_modules && rm pnpm-lock.yaml
 pnpm install
 
-# Optionally upgrade peer dependencies to a new PayloadCMS version
-pnpm update payload@<version> @payloadcms/ui@<version> @payloadcms/translations@<version>
+# The fresh install resolves the `^3.0.0` peer ranges to the newest published PayloadCMS: check
+# that node_modules/payload/package.json shows the target. Do not `pnpm update payload@<version>`,
+# pnpm 11 refuses a version on peer-only dependencies (ERR_PNPM_UPDATE_VERSION_ON_INDIRECT_DEP).
 
 pnpm type-check && pnpm build
 
