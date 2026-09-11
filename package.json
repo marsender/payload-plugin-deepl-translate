@@ -90,11 +90,6 @@
     "node": "^18.20.2 || >=20.9.0",
     "pnpm": "^10 || ^11"
   },
-  "pnpm": {
-    "overrides": {
-      "dompurify": ">=3.4.0"
-    }
-  },
   "publishConfig": {
     "exports": {
       ".": {

@@ -26,6 +26,6 @@ type Props = {
  * client-side API call is needed to decide whether to show the button.
  * Renders TranslateButton when translation is allowed, null otherwise.
  */
-export declare const TranslateButtonWrapper: ({ collectionSlug, id, payload }: Props) => Promise<import("react/jsx-runtime").JSX.Element | null>;
+export declare const TranslateButtonWrapper: ({ collectionSlug, id, payload }: Props) => Promise<import("react").JSX.Element | null>;
 export {};
 //# sourceMappingURL=index.d.ts.map
