@@ -5,6 +5,13 @@
  */ export function extractTranslatableFields(data, fields, basePath = '', parentLocalized = false) {
     const result = [];
     for (const field of fields){
+        // Opt-out: a field holding text that is not prose (a URL, a slug, a code) declares
+        // `custom: { translate: false }`. This matters inside a localized container, where every
+        // text child is otherwise sent to the adapter. The opt-out covers the field's children,
+        // layout fields (row, collapsible, tabs) included.
+        if (isTranslationDisabled(field)) {
+            continue;
+        }
         // Layout fields without a name (row, collapsible) — recurse into their children
         if (!('name' in field)) {
             if ('fields' in field && Array.isArray(field.fields)) {
@@ -12,6 +19,7 @@
             }
             if ('tabs' in field && Array.isArray(field.tabs)) {
                 for (const tab of field.tabs){
+                    if (isTranslationDisabled(tab)) continue;
                     if ('fields' in tab && Array.isArray(tab.fields)) {
                         // Named tabs store their data nested under the tab name (e.g. tab.name = 'seo'
                         // → document.seo.fieldName). Unnamed tabs store data at document root.
@@ -119,6 +127,9 @@
         }
     }
     return result;
+}
+function isTranslationDisabled(field) {
+    return field.custom?.translate === false;
 }
 /**
  * Walk a Lexical editor state and return all text nodes with their tree paths.

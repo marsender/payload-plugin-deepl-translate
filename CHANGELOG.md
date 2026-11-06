@@ -4,6 +4,11 @@ All notable changes to `@marsender/payload-plugin-deepl-translate` are documente
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [3.89.1] - 2026-11-05
+
+### Added
+- `custom: { translate: false }` on a field or tab excludes it (and its children) from translation, e.g. a link URL inside a localized array
+
 ## [3.80.0] - 2026-03-20
 
 ### Added

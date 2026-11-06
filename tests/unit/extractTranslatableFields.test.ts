@@ -161,6 +161,75 @@ describe('extractTranslatableFields', () => {
     expect(result[1]).toMatchObject({ path: 'links.1.label', value: 'Contact' })
   })
 
+  it('skips a field marked custom.translate = false inside a localized array (link URL)', () => {
+    const fields = [
+      {
+        name: 'navItems',
+        type: 'array' as const,
+        localized: true,
+        fields: [
+          {
+            name: 'link',
+            type: 'group' as const,
+            fields: [
+              {
+                type: 'row' as const,
+                fields: [
+                  { name: 'url', type: 'text' as const, custom: { translate: false } },
+                  { name: 'label', type: 'text' as const },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ]
+    const data = { navItems: [{ link: { url: '/activities', label: 'Activités' } }] }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ path: 'navItems.0.link.label', value: 'Activités' })
+  })
+
+  it('skips an explicitly localized field marked custom.translate = false', () => {
+    const fields = [{ ...textField('code'), custom: { translate: false } }, textField('title')]
+    const data = { code: 'PROMO-2026', title: 'Bonjour' }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ path: 'title' })
+  })
+
+  it('skips every child of a container marked custom.translate = false', () => {
+    const fields = [
+      {
+        name: 'meta',
+        type: 'group' as const,
+        localized: true,
+        custom: { translate: false },
+        fields: [{ name: 'label', type: 'text' as const }],
+      },
+    ]
+    const data = { meta: { label: 'Interne' } }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(0)
+  })
+
+  it('skips every child of a row or tab marked custom.translate = false', () => {
+    const fields = [
+      { type: 'row' as const, custom: { translate: false }, fields: [textField('code')] },
+      {
+        type: 'tabs' as const,
+        tabs: [
+          { name: 'internal', custom: { translate: false }, fields: [textField('note')] },
+          { label: 'Content', fields: [textField('title')] },
+        ],
+      },
+    ]
+    const data = { code: 'PROMO-2026', internal: { note: 'Interne' }, title: 'Bonjour' }
+    const result = extractTranslatableFields(data, fields as never)
+    expect(result).toHaveLength(1)
+    expect(result[0]).toMatchObject({ path: 'title' })
+  })
+
   it('does NOT extract text from children of a non-localized blocks field when child has no localized flag', () => {
     const fields = [
       {

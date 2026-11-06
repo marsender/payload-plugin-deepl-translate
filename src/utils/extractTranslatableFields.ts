@@ -1,4 +1,4 @@
-import type { Field } from 'payload'
+import type { Field, Tab } from 'payload'
 
 import type { TranslatableField } from '../types.js'
 
@@ -16,6 +16,14 @@ export function extractTranslatableFields(
   const result: TranslatableField[] = []
 
   for (const field of fields) {
+    // Opt-out: a field holding text that is not prose (a URL, a slug, a code) declares
+    // `custom: { translate: false }`. This matters inside a localized container, where every
+    // text child is otherwise sent to the adapter. The opt-out covers the field's children,
+    // layout fields (row, collapsible, tabs) included.
+    if (isTranslationDisabled(field)) {
+      continue
+    }
+
     // Layout fields without a name (row, collapsible) — recurse into their children
     if (!('name' in field)) {
       if ('fields' in field && Array.isArray(field.fields)) {
@@ -23,6 +31,7 @@ export function extractTranslatableFields(
       }
       if ('tabs' in field && Array.isArray(field.tabs)) {
         for (const tab of field.tabs) {
+          if (isTranslationDisabled(tab)) continue
           if ('fields' in tab && Array.isArray(tab.fields)) {
             // Named tabs store their data nested under the tab name (e.g. tab.name = 'seo'
             // → document.seo.fieldName). Unnamed tabs store data at document root.
@@ -171,6 +180,10 @@ export function extractTranslatableFields(
   }
 
   return result
+}
+
+function isTranslationDisabled(field: Field | Tab): boolean {
+  return field.custom?.translate === false
 }
 
 // ---------------------------------------------------------------------------

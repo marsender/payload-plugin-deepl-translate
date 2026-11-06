@@ -72,6 +72,19 @@ export default buildConfig({
 }
 ```
 
+Every text child of a localized array, group or blocks field is translated, even without its
+own `localized` flag. Exclude a field holding text that is not prose (a URL, a slug, a code)
+with `custom: { translate: false }`; the opt-out covers its children too (on a row, collapsible,
+tabs field or single tab, every field inside it):
+
+```typescript
+{
+  name: 'url',
+  type: 'text',
+  custom: { translate: false },  // ← never sent to the translation adapter
+}
+```
+
 ### 4. Restart and translate
 
 Open any document in a configured collection, click **Translate**, adjust the locale selection if needed, and confirm.
